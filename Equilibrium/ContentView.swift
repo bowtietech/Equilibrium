@@ -34,12 +34,12 @@ struct ContentView: View {
                 VStack(spacing: 0) {
                     appLabel
                     modeSwitcher
-                    scoreCard
                     Spacer()
                     goalInfo
                     wheelArea
                     hint
                     Spacer()
+                    scoreCard
                 }
             }
             .preferredColorScheme(.dark)
