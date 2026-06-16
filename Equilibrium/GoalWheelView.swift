@@ -25,7 +25,9 @@ struct GoalWheelView: View {
                     .onChanged { val in
                         let moved = hypot(Double(val.translation.width), Double(val.translation.height))
                         guard moved > 6 else { return }
-                        dragDelta = Double(val.translation.width) * 0.012
+                        dragDelta = angularDelta(start: val.startLocation,
+                                                 current: val.location,
+                                                 center: center)
                         let candidate = nearestGoal(rotation: currentRotation)
                         if candidate != activeIndex {
                             withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) {
@@ -39,13 +41,33 @@ struct GoalWheelView: View {
                             dragDelta = 0
                             handleTap(at: val.startLocation, center: center, radius: radius)
                         } else {
-                            rotation += Double(val.translation.width) * 0.012
+                            rotation += dragDelta
                             dragDelta = 0
                             snap()
                         }
                     }
             )
         }
+    }
+
+    // MARK: - Circular Drag
+
+    /// Signed angle (radians) to rotate from `start` to `current` around `center`.
+    /// Uses cross/dot product so it's numerically stable with no atan2-wrap issues
+    /// for movements up to ±180°, which covers all practical single-gesture usage.
+    private func angularDelta(start: CGPoint, current: CGPoint, center: CGPoint) -> Double {
+        let v0x = Double(start.x   - center.x)
+        let v0y = Double(start.y   - center.y)
+        let v1x = Double(current.x - center.x)
+        let v1y = Double(current.y - center.y)
+        let startDist = hypot(v0x, v0y)
+        // Too close to center — fall back to a gentle horizontal sensitivity
+        guard startDist > 12 else {
+            return Double(current.x - start.x) * 0.006
+        }
+        let cross = v0x * v1y - v0y * v1x
+        let dot   = v0x * v1x + v0y * v1y
+        return atan2(cross, dot)
     }
 
     // MARK: - Tap Handling

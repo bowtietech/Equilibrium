@@ -1,25 +1,50 @@
 import SwiftUI
 
+// MARK: - Schedule picker helpers (local to this file)
+
+private enum ScheduleType: String, CaseIterable {
+    case daily    = "Every day"
+    case weekdays = "Specific days"
+    case monthly  = "Monthly"
+    case once     = "Specific date"
+}
+
+private let weekdayLabels = ["S", "M", "T", "W", "T", "F", "S"]  // index 0 = Sun (weekday 1)
+
+// MARK: - GoalDetailView
+
 struct GoalDetailView: View {
     @Binding var goal: Goal
     @Environment(\.dismiss) private var dismiss
 
-    @State private var showingAddSheet  = false
-    @State private var newItemName      = ""
+    @State private var showingAddSheet   = false
     @State private var editingItemID: UUID? = nil
-    @State private var editBuffer       = ""
+    @State private var editBuffer        = ""
+
+    // Add-sheet state
+    @State private var newItemName       = ""
+    @State private var scheduleType      = ScheduleType.daily
+    @State private var weekdaySelection  = Set<Int>([2, 3, 4, 5, 6])  // Mon–Fri default
+    @State private var monthDay          = Calendar.current.component(.day, from: Date())
+    @State private var onceDate          = Date()
+
+    private var derivedSchedule: GoalSchedule {
+        switch scheduleType {
+        case .daily:    return .daily
+        case .weekdays: return .weekdays(weekdaySelection.sorted())
+        case .monthly:  return .monthly(monthDay)
+        case .once:     return .once(onceDate)
+        }
+    }
 
     var body: some View {
         ZStack {
             Color(red: 0.04, green: 0.04, blue: 0.09).ignoresSafeArea()
 
-            // Subtle color bloom behind the header
             VStack {
                 RadialGradient(
                     colors: [goal.color.opacity(0.18), .clear],
-                    center: .top,
-                    startRadius: 0,
-                    endRadius: 260
+                    center: .top, startRadius: 0, endRadius: 260
                 )
                 .frame(height: 320)
                 .ignoresSafeArea()
@@ -50,23 +75,19 @@ struct GoalDetailView: View {
         }
     }
 
-    // MARK: - Sections
+    // MARK: - Header
 
     private var headerSection: some View {
         Section {
             VStack(spacing: 20) {
-                // Progress ring with icon
                 ZStack {
+                    Circle().stroke(goal.color.opacity(0.18), lineWidth: 9)
                     Circle()
-                        .stroke(goal.color.opacity(0.18), lineWidth: 9)
-                    Circle()
-                        .trim(from: 0, to: goal.progress)
-                        .stroke(goal.color,
-                                style: StrokeStyle(lineWidth: 9, lineCap: .round))
+                        .trim(from: 0, to: goal.todayProgress ?? goal.progress)
+                        .stroke(goal.color, style: StrokeStyle(lineWidth: 9, lineCap: .round))
                         .rotationEffect(.degrees(-90))
                         .animation(.spring(response: 0.5, dampingFraction: 0.8),
-                                   value: goal.progress)
-
+                                   value: goal.todayProgress)
                     Image(systemName: goal.icon)
                         .font(.system(size: 30, weight: .light))
                         .foregroundStyle(goal.color)
@@ -78,11 +99,17 @@ struct GoalDetailView: View {
                         .font(.system(size: 30, weight: .bold, design: .rounded))
                         .foregroundStyle(goal.color)
 
-                    let done  = goal.items.filter(\.isComplete).count
-                    let total = goal.items.count
-                    Text("\(Int(goal.progress * 100))% complete  ·  \(done) of \(total)")
-                        .font(.system(size: 13, weight: .regular, design: .monospaced))
-                        .foregroundStyle(.white.opacity(0.38))
+                    if let tp = goal.todayProgress {
+                        let done  = goal.items.filter { $0.isActiveToday && $0.isComplete }.count
+                        let total = goal.items.filter(\.isActiveToday).count
+                        Text("\(Int(tp * 100))% today  ·  \(done)/\(total) complete")
+                            .font(.system(size: 13, weight: .regular, design: .monospaced))
+                            .foregroundStyle(.white.opacity(0.38))
+                    } else {
+                        Text("no goals scheduled today")
+                            .font(.system(size: 13, weight: .regular, design: .monospaced))
+                            .foregroundStyle(.white.opacity(0.25))
+                    }
                 }
             }
             .frame(maxWidth: .infinity)
@@ -91,6 +118,8 @@ struct GoalDetailView: View {
             .listRowSeparator(.hidden)
         }
     }
+
+    // MARK: - Items
 
     private var itemsSection: some View {
         Section {
@@ -102,40 +131,44 @@ struct GoalDetailView: View {
                     editBuffer: $editBuffer
                 )
                 .listRowBackground(
-                    RoundedRectangle(cornerRadius: 0)
-                        .fill(Color.white.opacity(item.isComplete ? 0.03 : 0.06))
+                    Color.white.opacity(item.isActiveToday ? 0.06 : 0.03)
                 )
                 .listRowSeparatorTint(.white.opacity(0.07))
                 .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
             }
-            .onDelete { indices in
-                goal.items.remove(atOffsets: indices)
-            }
-            .onMove { from, to in
-                goal.items.move(fromOffsets: from, toOffset: to)
-            }
+            .onDelete { goal.items.remove(atOffsets: $0) }
+            .onMove  { goal.items.move(fromOffsets: $0, toOffset: $1) }
         } header: {
-            Text("Goals")
-                .font(.system(size: 11, weight: .semibold, design: .monospaced))
-                .foregroundStyle(.white.opacity(0.3))
-                .textCase(nil)
-                .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 6, trailing: 0))
+            HStack {
+                Text("Goals")
+                    .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                    .foregroundStyle(.white.opacity(0.3))
+                    .textCase(nil)
+                Spacer()
+                Text("swipe to delete  ·  hold to reorder")
+                    .font(.system(size: 10, design: .monospaced))
+                    .foregroundStyle(.white.opacity(0.18))
+                    .textCase(nil)
+            }
+            .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 6, trailing: 20))
         }
     }
 
     // MARK: - Add Sheet
 
     private var addItemSheet: some View {
-        VStack(spacing: 20) {
+        VStack(alignment: .leading, spacing: 20) {
             Capsule()
                 .fill(.white.opacity(0.2))
                 .frame(width: 36, height: 4)
+                .frame(maxWidth: .infinity)
                 .padding(.top, 8)
 
             Text("New \(goal.name) Goal")
                 .font(.system(size: 18, weight: .semibold, design: .rounded))
                 .foregroundStyle(.white)
 
+            // Name field
             TextField("e.g. Meditate 10 minutes", text: $newItemName)
                 .textFieldStyle(.plain)
                 .font(.system(size: 16))
@@ -145,36 +178,131 @@ struct GoalDetailView: View {
                 .padding(.vertical, 14)
                 .background(Color.white.opacity(0.08))
                 .clipShape(RoundedRectangle(cornerRadius: 12))
-                .onSubmit { commitNewItem() }
 
+            // Schedule picker
+            schedulePicker
+
+            // Add button
             Button(action: commitNewItem) {
                 Text("Add Goal")
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(newItemName.trimmingCharacters(in: .whitespaces).isEmpty
-                                     ? .white.opacity(0.3) : goal.color)
+                    .foregroundStyle(canAdd ? goal.color : .white.opacity(0.3))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 15)
-                    .background(goal.color.opacity(
-                        newItemName.trimmingCharacters(in: .whitespaces).isEmpty ? 0.06 : 0.15))
+                    .background(goal.color.opacity(canAdd ? 0.15 : 0.06))
                     .clipShape(RoundedRectangle(cornerRadius: 13))
             }
-            .disabled(newItemName.trimmingCharacters(in: .whitespaces).isEmpty)
+            .disabled(!canAdd)
 
             Spacer()
         }
         .padding(.horizontal, 24)
-        .presentationDetents([.height(260)])
+        .presentationDetents([.height(scheduleSheetHeight)])
         .presentationBackground(Color(red: 0.08, green: 0.08, blue: 0.13))
         .presentationCornerRadius(24)
+        .onSubmit { commitNewItem() }
+    }
+
+    private var canAdd: Bool {
+        !newItemName.trimmingCharacters(in: .whitespaces).isEmpty &&
+        !(scheduleType == .weekdays && weekdaySelection.isEmpty)
+    }
+
+    private var scheduleSheetHeight: CGFloat {
+        switch scheduleType {
+        case .daily:    return 320
+        case .weekdays: return 380
+        case .monthly:  return 400
+        case .once:     return 460
+        }
+    }
+
+    @ViewBuilder
+    private var schedulePicker: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("REPEAT")
+                .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                .foregroundStyle(.white.opacity(0.3))
+
+            // Type segmented tabs
+            HStack(spacing: 6) {
+                ForEach(ScheduleType.allCases, id: \.self) { type in
+                    Button {
+                        withAnimation(.spring(response: 0.25)) { scheduleType = type }
+                    } label: {
+                        Text(type.rawValue)
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(scheduleType == type ? goal.color : .white.opacity(0.45))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(scheduleType == type
+                                        ? goal.color.opacity(0.18)
+                                        : Color.white.opacity(0.06))
+                            .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+
+            // Extra picker depending on type
+            switch scheduleType {
+            case .daily:
+                EmptyView()
+
+            case .weekdays:
+                HStack(spacing: 6) {
+                    ForEach(1...7, id: \.self) { wd in
+                        let selected = weekdaySelection.contains(wd)
+                        Button {
+                            withAnimation(.spring(response: 0.2)) {
+                                if selected { weekdaySelection.remove(wd) }
+                                else        { weekdaySelection.insert(wd) }
+                            }
+                        } label: {
+                            Text(weekdayLabels[wd - 1])
+                                .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                                .foregroundStyle(selected ? goal.color : .white.opacity(0.35))
+                                .frame(width: 36, height: 36)
+                                .background(selected
+                                            ? goal.color.opacity(0.2)
+                                            : Color.white.opacity(0.07))
+                                .clipShape(Circle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+
+            case .monthly:
+                Picker("Day of month", selection: $monthDay) {
+                    ForEach(1...31, id: \.self) { day in
+                        Text("\(day)").tag(day)
+                    }
+                }
+                .pickerStyle(.wheel)
+                .frame(height: 100)
+                .tint(goal.color)
+
+            case .once:
+                DatePicker("Date", selection: $onceDate, displayedComponents: .date)
+                    .datePickerStyle(.graphical)
+                    .tint(goal.color)
+                    .frame(height: 160)
+                    .scaleEffect(0.88)
+            }
+        }
     }
 
     private func commitNewItem() {
         let trimmed = newItemName.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return }
+        guard !(scheduleType == .weekdays && weekdaySelection.isEmpty) else { return }
         withAnimation(.spring(response: 0.3)) {
-            goal.items.append(GoalItem(name: trimmed))
+            goal.items.append(GoalItem(name: trimmed, schedule: derivedSchedule))
         }
         newItemName      = ""
+        scheduleType     = .daily
+        weekdaySelection = [2, 3, 4, 5, 6]
+        onceDate         = Date()
         showingAddSheet  = false
     }
 }
@@ -204,24 +332,40 @@ struct GoalItemRow: View {
             }
             .buttonStyle(.plain)
 
-            // Name — editable on tap
-            if isEditing {
-                TextField("Goal name", text: $editBuffer)
-                    .textFieldStyle(.plain)
-                    .font(.system(size: 15))
-                    .foregroundStyle(.white)
-                    .tint(goalColor)
-                    .onSubmit { commitEdit() }
-            } else {
-                Text(item.name)
-                    .font(.system(size: 15))
-                    .foregroundStyle(item.isComplete ? .white.opacity(0.35) : .white.opacity(0.88))
-                    .strikethrough(item.isComplete, color: .white.opacity(0.22))
-                    .animation(.easeInOut(duration: 0.18), value: item.isComplete)
-                    .onTapGesture {
-                        editBuffer = item.name
-                        withAnimation { editingID = item.id }
+            // Name + schedule
+            VStack(alignment: .leading, spacing: 3) {
+                if isEditing {
+                    TextField("Goal name", text: $editBuffer)
+                        .textFieldStyle(.plain)
+                        .font(.system(size: 15))
+                        .foregroundStyle(.white)
+                        .tint(goalColor)
+                        .onSubmit { commitEdit() }
+                } else {
+                    Text(item.name)
+                        .font(.system(size: 15))
+                        .foregroundStyle(item.isComplete ? .white.opacity(0.35) : .white.opacity(0.88))
+                        .strikethrough(item.isComplete, color: .white.opacity(0.22))
+                        .animation(.easeInOut(duration: 0.18), value: item.isComplete)
+                        .onTapGesture {
+                            editBuffer = item.name
+                            withAnimation { editingID = item.id }
+                        }
+                }
+
+                // Schedule label
+                HStack(spacing: 4) {
+                    if item.isActiveToday {
+                        Circle()
+                            .fill(goalColor)
+                            .frame(width: 5, height: 5)
                     }
+                    Text(item.schedule.label)
+                        .font(.system(size: 11, weight: .regular, design: .monospaced))
+                        .foregroundStyle(item.isActiveToday
+                                         ? goalColor.opacity(0.65)
+                                         : .white.opacity(0.22))
+                }
             }
 
             Spacer()
@@ -232,7 +376,7 @@ struct GoalItemRow: View {
                     .foregroundStyle(goalColor)
             }
         }
-        .padding(.vertical, 14)
+        .padding(.vertical, 12)
         .contentShape(Rectangle())
     }
 
