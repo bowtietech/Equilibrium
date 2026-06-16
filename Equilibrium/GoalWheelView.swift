@@ -3,6 +3,7 @@ import SwiftUI
 struct GoalWheelView: View {
     let goals: [Goal]
     @Binding var activeIndex: Int
+    var onActiveTap: () -> Void = {}
 
     @State private var rotation: Double = 0
     @State private var dragDelta: Double = 0
@@ -20,10 +21,11 @@ struct GoalWheelView: View {
             }
             .contentShape(Rectangle())
             .gesture(
-                DragGesture(minimumDistance: 4)
+                DragGesture(minimumDistance: 0)
                     .onChanged { val in
-                        let sensitivity = 0.012
-                        dragDelta = Double(val.translation.width) * sensitivity
+                        let moved = hypot(Double(val.translation.width), Double(val.translation.height))
+                        guard moved > 6 else { return }
+                        dragDelta = Double(val.translation.width) * 0.012
                         let candidate = nearestGoal(rotation: currentRotation)
                         if candidate != activeIndex {
                             withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) {
@@ -32,11 +34,56 @@ struct GoalWheelView: View {
                         }
                     }
                     .onEnded { val in
-                        rotation += Double(val.translation.width) * 0.012
-                        dragDelta = 0
-                        snap()
+                        let moved = hypot(Double(val.translation.width), Double(val.translation.height))
+                        if moved < 6 {
+                            dragDelta = 0
+                            handleTap(at: val.startLocation, center: center, radius: radius)
+                        } else {
+                            rotation += Double(val.translation.width) * 0.012
+                            dragDelta = 0
+                            snap()
+                        }
                     }
             )
+        }
+    }
+
+    // MARK: - Tap Handling
+
+    private func handleTap(at location: CGPoint, center: CGPoint, radius: CGFloat) {
+        let dx = location.x - center.x
+        let dy = location.y - center.y
+        let dist = hypot(dx, dy)
+
+        let hubR = min(radius * 0.065, 9.0)
+        guard dist > hubR * 3 && dist < radius * 1.45 else { return }
+
+        let tapAngle = atan2(Double(dy), Double(dx))
+        let step = 2.0 * Double.pi / Double(goals.count)
+
+        var minDiff = Double.infinity
+        var nearest = activeIndex
+
+        for i in 0..<goals.count {
+            let goalAngle = -(Double.pi / 2) + Double(i) * step + currentRotation
+            var diff = (tapAngle - goalAngle).truncatingRemainder(dividingBy: 2 * .pi)
+            if diff >  .pi { diff -= 2 * .pi }
+            if diff < -.pi { diff += 2 * .pi }
+            if abs(diff) < minDiff { minDiff = abs(diff); nearest = i }
+        }
+
+        if nearest == activeIndex {
+            onActiveTap()
+        } else {
+            withAnimation(.spring(response: 0.25, dampingFraction: 0.75)) {
+                activeIndex = nearest
+            }
+            var adj = (Double(nearest) * step + rotation).truncatingRemainder(dividingBy: 2 * .pi)
+            if adj >  .pi { adj -= 2 * .pi }
+            if adj < -.pi { adj += 2 * .pi }
+            withAnimation(.spring(response: 0.38, dampingFraction: 0.78)) {
+                rotation -= adj
+            }
         }
     }
 

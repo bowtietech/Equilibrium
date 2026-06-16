@@ -1,23 +1,30 @@
 import SwiftUI
 
 struct ContentView: View {
-    @State private var goals       = Goal.demos
-    @State private var activeIndex = 0
+    @State private var goals          = Goal.demos
+    @State private var activeIndex    = 0
+    @State private var navigateToDetail = false
 
     private var active: Goal { goals[activeIndex] }
 
     var body: some View {
-        ZStack {
-            background
-            VStack(spacing: 0) {
-                appLabel
-                Spacer(minLength: 0)
-                goalInfo
-                wheelArea
-                hint
+        NavigationStack {
+            ZStack {
+                background
+                VStack(spacing: 0) {
+                    appLabel
+                    Spacer(minLength: 0)
+                    goalInfo
+                    wheelArea
+                    hint
+                }
+            }
+            .preferredColorScheme(.dark)
+            .navigationBarHidden(true)
+            .navigationDestination(isPresented: $navigateToDetail) {
+                GoalDetailView(goal: $goals[activeIndex])
             }
         }
-        .preferredColorScheme(.dark)
     }
 
     // MARK: - Sub-views
@@ -72,13 +79,15 @@ struct ContentView: View {
     }
 
     private var wheelArea: some View {
-        GoalWheelView(goals: goals, activeIndex: $activeIndex)
-            .frame(maxWidth: .infinity)
-            .frame(height: 340)
+        GoalWheelView(goals: goals, activeIndex: $activeIndex, onActiveTap: {
+            navigateToDetail = true
+        })
+        .frame(maxWidth: .infinity)
+        .frame(height: 340)
     }
 
     private var hint: some View {
-        Text("swipe to explore")
+        Text("swipe to explore  ·  tap to open")
             .font(.system(size: 12, weight: .light, design: .monospaced))
             .foregroundStyle(.white.opacity(0.18))
             .padding(.top, 8)
