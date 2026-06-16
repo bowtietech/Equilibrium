@@ -1,0 +1,23 @@
+{
+  "images" : [
+    {
+      "idiom" : "watch",
+      "scale" : "2x",
+      "screenWidth" : "<=145"
+    },
+    {
+      "idiom" : "watch",
+      "scale" : "2x",
+      "screenWidth" : ">145"
+    },
+    {
+      "idiom" : "watch-marketing",
+      "scale" : "1x",
+      "size" : "1024x1024"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}
