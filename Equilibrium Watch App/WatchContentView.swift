@@ -36,7 +36,7 @@ struct WatchContentView: View {
                 .transition(.opacity.combined(with: .scale(scale: 0.9)))
                 .animation(.spring(response: 0.25, dampingFraction: 0.7), value: activeIndex)
 
-                GoalWheelView(goals: goals, activeIndex: $activeIndex)
+                GoalWheelView(goals: goals.map(\.wheelEntry), activeIndex: $activeIndex)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                 Text("\(Int(active.progress * 100))%")

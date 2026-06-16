@@ -1,12 +1,31 @@
 import SwiftUI
 
+enum AppMode: String, CaseIterable {
+    case daily = "Daily"
+    case life  = "Life Goals"
+
+    var icon: String {
+        switch self {
+        case .daily: return "calendar"
+        case .life:  return "star"
+        }
+    }
+}
+
 struct ContentView: View {
+    @State private var mode             = AppMode.daily
     @State private var goals            = Goal.demos
+    @State private var lifeGoals        = LifeGoal.demos
     @State private var activeIndex      = 0
     @State private var navigateToDetail = false
 
-    private var active: Goal       { goals[activeIndex] }
-    private var score: Double      { goals.balanceScore }
+    private var entries: [WheelEntry] {
+        switch mode {
+        case .daily: return goals.map(\.wheelEntry)
+        case .life:  return lifeGoals.map(\.wheelEntry)
+        }
+    }
+    private var active: WheelEntry { entries[activeIndex] }
 
     var body: some View {
         NavigationStack {
@@ -14,7 +33,8 @@ struct ContentView: View {
                 background
                 VStack(spacing: 0) {
                     appLabel
-                    balanceCard
+                    modeSwitcher
+                    scoreCard
                     Spacer(minLength: 0)
                     goalInfo
                     wheelArea
@@ -24,8 +44,21 @@ struct ContentView: View {
             .preferredColorScheme(.dark)
             .navigationBarHidden(true)
             .navigationDestination(isPresented: $navigateToDetail) {
-                GoalDetailView(goal: $goals[activeIndex])
+                detailDestination
             }
+        }
+        .onChange(of: mode) { _, _ in
+            withAnimation(.spring(response: 0.4)) { activeIndex = 0 }
+        }
+    }
+
+    @ViewBuilder
+    private var detailDestination: some View {
+        switch mode {
+        case .daily:
+            GoalDetailView(goal: $goals[activeIndex])
+        case .life:
+            LifeGoalDetailView(goal: $lifeGoals[activeIndex])
         }
     }
 
@@ -36,16 +69,14 @@ struct ContentView: View {
             Color(red: 0.04, green: 0.04, blue: 0.09)
             RadialGradient(
                 colors: [active.color.opacity(0.11), .clear],
-                center: .center,
-                startRadius: 0,
-                endRadius: 320
+                center: .center, startRadius: 0, endRadius: 320
             )
             .animation(.easeInOut(duration: 0.5), value: activeIndex)
         }
         .ignoresSafeArea()
     }
 
-    // MARK: - Sub-views
+    // MARK: - Header
 
     private var appLabel: some View {
         Text("equilibrium")
@@ -54,22 +85,51 @@ struct ContentView: View {
             .padding(.top, 16)
     }
 
-    private var balanceCard: some View {
-        HStack(spacing: 14) {
-            // Animated progress ring
-            ZStack {
-                Circle()
-                    .stroke(.white.opacity(0.1), lineWidth: 5)
-                Circle()
-                    .trim(from: 0, to: score)
-                    .stroke(
-                        scoreColor(score),
-                        style: StrokeStyle(lineWidth: 5, lineCap: .round)
-                    )
-                    .rotationEffect(.degrees(-90))
-                    .animation(.spring(response: 0.7, dampingFraction: 0.8), value: score)
+    private var modeSwitcher: some View {
+        HStack(spacing: 2) {
+            ForEach(AppMode.allCases, id: \.self) { m in
+                Button {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+                        mode = m
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: m.icon)
+                            .font(.system(size: 12))
+                        Text(m.rawValue)
+                            .font(.system(size: 13, weight: .medium))
+                    }
+                    .foregroundStyle(mode == m ? .white : .white.opacity(0.4))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(mode == m ? Color.white.opacity(0.12) : .clear)
+                    .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
             }
-            .frame(width: 44, height: 44)
+        }
+        .padding(3)
+        .background(Color.white.opacity(0.06))
+        .clipShape(Capsule())
+        .padding(.horizontal, 24)
+        .padding(.top, 10)
+    }
+
+    // MARK: - Score / Progress Card
+
+    @ViewBuilder
+    private var scoreCard: some View {
+        switch mode {
+        case .daily:  dailyScoreCard
+        case .life:   lifeProgressCard
+        }
+    }
+
+    private var dailyScoreCard: some View {
+        let score = goals.balanceScore
+        return HStack(spacing: 14) {
+            ringView(progress: score, color: scoreColor(score))
+                .frame(width: 44, height: 44)
 
             VStack(alignment: .leading, spacing: 2) {
                 HStack(alignment: .firstTextBaseline, spacing: 3) {
@@ -90,16 +150,50 @@ struct ContentView: View {
             Spacer()
 
             Text(todayLabel)
-                .font(.system(size: 11, weight: .regular, design: .monospaced))
+                .font(.system(size: 11, design: .monospaced))
                 .foregroundStyle(.white.opacity(0.2))
         }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 12)
-        .background(.white.opacity(0.05))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .padding(.horizontal, 20)
-        .padding(.top, 10)
+        .cardStyle()
     }
+
+    private var lifeProgressCard: some View {
+        let score = lifeGoals.map(\.progress).reduce(0, +) / max(1, Double(lifeGoals.count))
+        return HStack(spacing: 14) {
+            ringView(progress: score, color: scoreColor(score))
+                .frame(width: 44, height: 44)
+
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(alignment: .firstTextBaseline, spacing: 3) {
+                    Text("\(Int(score * 100))")
+                        .font(.system(size: 26, weight: .bold, design: .rounded))
+                        .foregroundStyle(scoreColor(score))
+                        .contentTransition(.numericText())
+                        .animation(.spring(response: 0.5), value: Int(score * 100))
+                    Text("%")
+                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .foregroundStyle(scoreColor(score).opacity(0.7))
+                }
+                Text("overall life progress")
+                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                    .foregroundStyle(.white.opacity(0.28))
+            }
+
+            Spacer()
+
+            // Life goal type breakdown
+            let metricCount  = lifeGoals.filter { if case .metric  = $0.kind { return true }; return false }.count
+            let projectCount = lifeGoals.filter { if case .project = $0.kind { return true }; return false }.count
+            VStack(alignment: .trailing, spacing: 2) {
+                Text("\(metricCount) metric")
+                Text("\(projectCount) project")
+            }
+            .font(.system(size: 10, design: .monospaced))
+            .foregroundStyle(.white.opacity(0.2))
+        }
+        .cardStyle()
+    }
+
+    // MARK: - Goal Info
 
     private var goalInfo: some View {
         VStack(spacing: 6) {
@@ -110,14 +204,16 @@ struct ContentView: View {
                 Text(active.name)
                     .font(.system(size: 34, weight: .bold, design: .rounded))
                     .foregroundStyle(active.color)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
             }
-            .id("name-\(activeIndex)")
+            .id("name-\(mode)-\(activeIndex)")
             .transition(.asymmetric(
                 insertion: .opacity.combined(with: .scale(scale: 0.88)),
                 removal:   .opacity.combined(with: .scale(scale: 1.06))
             ))
 
-            todayProgressLabel
+            progressSubtitle
         }
         .animation(.spring(response: 0.3, dampingFraction: 0.72), value: activeIndex)
         .frame(height: 88)
@@ -125,28 +221,43 @@ struct ContentView: View {
     }
 
     @ViewBuilder
-    private var todayProgressLabel: some View {
-        if let tp = active.todayProgress {
-            Text("\(Int(tp * 100))% today")
-                .font(.system(size: 14, weight: .regular, design: .monospaced))
-                .foregroundStyle(.white.opacity(0.45))
-                .id("pct-\(activeIndex)")
-                .transition(.opacity)
-        } else {
-            Text("no goals today")
-                .font(.system(size: 14, weight: .regular, design: .monospaced))
-                .foregroundStyle(.white.opacity(0.25))
-                .id("notoday-\(activeIndex)")
-                .transition(.opacity)
+    private var progressSubtitle: some View {
+        switch mode {
+        case .daily:
+            let g = goals[activeIndex]
+            if let tp = g.todayProgress {
+                Text("\(Int(tp * 100))% today")
+                    .font(.system(size: 14, design: .monospaced))
+                    .foregroundStyle(.white.opacity(0.45))
+            } else {
+                Text("no goals today")
+                    .font(.system(size: 14, design: .monospaced))
+                    .foregroundStyle(.white.opacity(0.25))
+            }
+        case .life:
+            let lg = lifeGoals[activeIndex]
+            switch lg.kind {
+            case .metric(let m):
+                Text("\(m.currentLabel) → \(m.targetLabel)")
+                    .font(.system(size: 14, design: .monospaced))
+                    .foregroundStyle(.white.opacity(0.45))
+            case .project(let sgs):
+                let done  = sgs.filter { $0.progress >= 1.0 }.count
+                Text("\(done)/\(sgs.count) areas complete")
+                    .font(.system(size: 14, design: .monospaced))
+                    .foregroundStyle(.white.opacity(0.45))
+            }
         }
     }
 
+    // MARK: - Wheel
+
     private var wheelArea: some View {
-        GoalWheelView(goals: goals, activeIndex: $activeIndex, onActiveTap: {
+        GoalWheelView(goals: entries, activeIndex: $activeIndex, onActiveTap: {
             navigateToDetail = true
         })
         .frame(maxWidth: .infinity)
-        .frame(height: 320)
+        .frame(height: 300)
     }
 
     private var hint: some View {
@@ -154,10 +265,21 @@ struct ContentView: View {
             .font(.system(size: 11, weight: .light, design: .monospaced))
             .foregroundStyle(.white.opacity(0.16))
             .padding(.top, 8)
-            .padding(.bottom, 24)
+            .padding(.bottom, 20)
     }
 
     // MARK: - Helpers
+
+    private func ringView(progress: Double, color: Color) -> some View {
+        ZStack {
+            Circle().stroke(.white.opacity(0.1), lineWidth: 5)
+            Circle()
+                .trim(from: 0, to: progress)
+                .stroke(color, style: StrokeStyle(lineWidth: 5, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+                .animation(.spring(response: 0.7, dampingFraction: 0.8), value: progress)
+        }
+    }
 
     private func scoreColor(_ s: Double) -> Color {
         if s < 0.4 { return Color(red: 1.0, green: 0.40, blue: 0.40) }
@@ -166,9 +288,22 @@ struct ContentView: View {
     }
 
     private var todayLabel: String {
-        let f = DateFormatter()
-        f.dateFormat = "EEE MMM d"
+        let f = DateFormatter(); f.dateFormat = "EEE MMM d"
         return f.string(from: Date())
+    }
+}
+
+// MARK: - Card style helper
+
+private extension View {
+    func cardStyle() -> some View {
+        self
+            .padding(.horizontal, 18)
+            .padding(.vertical, 12)
+            .background(.white.opacity(0.05))
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            .padding(.horizontal, 20)
+            .padding(.top, 10)
     }
 }
 

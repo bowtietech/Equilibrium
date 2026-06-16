@@ -12,6 +12,9 @@
 		BB0000000000000000000003 /* EquilibriumApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000003 /* EquilibriumApp.swift */; };
 		BB0000000000000000000004 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000004 /* ContentView.swift */; };
 		BB000000000000000000000C /* GoalDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000000B /* GoalDetailView.swift */; };
+		BB000000000000000000000D /* LifeGoal.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000000C /* LifeGoal.swift */; };
+		BB000000000000000000000E /* LifeGoalDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000000D /* LifeGoalDetailView.swift */; };
+		BB000000000000000000000F /* LifeGoal.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000000C /* LifeGoal.swift */; };
 		BB0000000000000000000005 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000005 /* Assets.xcassets */; };
 		BB0000000000000000000006 /* Goal.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000001 /* Goal.swift */; };
 		BB0000000000000000000007 /* GoalWheelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000002 /* GoalWheelView.swift */; };
@@ -51,6 +54,8 @@
 		AA0000000000000000000003 /* EquilibriumApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EquilibriumApp.swift; sourceTree = "<group>"; };
 		AA0000000000000000000004 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		AA000000000000000000000B /* GoalDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalDetailView.swift; sourceTree = "<group>"; };
+		AA000000000000000000000C /* LifeGoal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifeGoal.swift; sourceTree = "<group>"; };
+		AA000000000000000000000D /* LifeGoalDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifeGoalDetailView.swift; sourceTree = "<group>"; };
 		AA0000000000000000000005 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		AA0000000000000000000006 /* EquilibriumWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EquilibriumWatchApp.swift; sourceTree = "<group>"; };
 		AA0000000000000000000007 /* WatchContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchContentView.swift; sourceTree = "<group>"; };
@@ -90,10 +95,12 @@
 			isa = PBXGroup;
 			children = (
 				AA0000000000000000000001 /* Goal.swift */,
+				AA000000000000000000000C /* LifeGoal.swift */,
 				AA0000000000000000000002 /* GoalWheelView.swift */,
 				AA0000000000000000000003 /* EquilibriumApp.swift */,
 				AA0000000000000000000004 /* ContentView.swift */,
 				AA000000000000000000000B /* GoalDetailView.swift */,
+				AA000000000000000000000D /* LifeGoalDetailView.swift */,
 				AA0000000000000000000005 /* Assets.xcassets */,
 			);
 			path = Equilibrium;
@@ -219,10 +226,12 @@
 			buildActionMask = 2147483647;
 			files = (
 				BB0000000000000000000001 /* Goal.swift in Sources */,
+				BB000000000000000000000D /* LifeGoal.swift in Sources */,
 				BB0000000000000000000002 /* GoalWheelView.swift in Sources */,
 				BB0000000000000000000003 /* EquilibriumApp.swift in Sources */,
 				BB0000000000000000000004 /* ContentView.swift in Sources */,
 				BB000000000000000000000C /* GoalDetailView.swift in Sources */,
+				BB000000000000000000000E /* LifeGoalDetailView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -231,6 +240,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				BB0000000000000000000006 /* Goal.swift in Sources */,
+				BB000000000000000000000F /* LifeGoal.swift in Sources */,
 				BB0000000000000000000007 /* GoalWheelView.swift in Sources */,
 				BB0000000000000000000008 /* EquilibriumWatchApp.swift in Sources */,
 				BB0000000000000000000009 /* WatchContentView.swift in Sources */,

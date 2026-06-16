@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct GoalWheelView: View {
-    let goals: [Goal]
+    let goals: [WheelEntry]
     @Binding var activeIndex: Int
     var onActiveTap: () -> Void = {}
 

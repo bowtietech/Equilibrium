@@ -1,5 +1,15 @@
 import SwiftUI
 
+// MARK: - Wheel Display Entry (shared by both Daily and Life modes)
+
+struct WheelEntry: Identifiable {
+    var id: UUID
+    var name: String
+    var color: Color
+    var icon: String
+    var progress: Double
+}
+
 // MARK: - Schedule
 
 enum GoalSchedule: Equatable {
@@ -81,6 +91,15 @@ struct Goal: Identifiable {
         let today = items.filter(\.isActiveToday)
         guard !today.isEmpty else { return nil }
         return Double(today.filter(\.isComplete).count) / Double(today.count)
+    }
+}
+
+// MARK: - Wheel Entry
+
+extension Goal {
+    var wheelEntry: WheelEntry {
+        WheelEntry(id: id, name: name, color: color, icon: icon,
+                   progress: todayProgress ?? progress)
     }
 }
 
