@@ -115,7 +115,7 @@ enum GoalSchedule: Equatable, Codable {
 
 // MARK: - GoalItem
 
-struct GoalItem: Identifiable, Codable {
+struct GoalItem: Identifiable, Codable, Equatable {
     var id       = UUID()
     var name: String
     var isComplete: Bool       = false
@@ -126,7 +126,7 @@ struct GoalItem: Identifiable, Codable {
 
 // MARK: - Goal
 
-struct Goal: Identifiable, Codable {
+struct Goal: Identifiable, Codable, Equatable {
     var id        = UUID()
     var name: String
     var colorData: GoalColor
