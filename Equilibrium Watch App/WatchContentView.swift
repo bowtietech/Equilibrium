@@ -64,21 +64,22 @@ struct WatchGoalPage: View {
                     .animation(.easeInOut(duration: 0.4), value: safeIndex)
                 }
 
-                // ── Wheel fills the whole canvas ─────────────────────────────
+                // ── Wheel — full screen, bleeds past safe area so glow isn't clipped
                 if entries.isEmpty {
                     Image(systemName: emptyIcon)
                         .font(.system(size: 36))
                         .foregroundStyle(.primary.opacity(0.12))
                 } else {
                     GoalWheelView(goals: entries, activeIndex: $activeIndex)
-                        .frame(width: geo.size.width, height: geo.size.height)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .ignoresSafeArea()
                 }
 
-                // ── Label pinned to the very bottom ─────────────────────────
-                VStack {
+                // ── Label at the absolute bottom edge ───────────────────────
+                VStack(spacing: 0) {
                     Spacer()
 
-                    VStack(spacing: 2) {
+                    VStack(spacing: 1) {
                         if let a = active {
                             HStack(spacing: 3) {
                                 Image(systemName: a.icon)
@@ -107,10 +108,12 @@ struct WatchGoalPage: View {
                         }
                     }
                     .padding(.horizontal, 8)
-                    .padding(.bottom, 6)
+                    .padding(.bottom, 2)
                 }
+                .ignoresSafeArea(edges: .bottom)
             }
         }
+        .ignoresSafeArea()
         .onChange(of: entries.count) { _, count in
             if activeIndex >= count && count > 0 {
                 activeIndex = count - 1
