@@ -93,7 +93,16 @@ struct ContentView: View {
             if phase == .active { Task { await health.refresh(goals: store.goals) } }
         }
         .onChange(of: store.goals) { _, goals in
+            // Clamp activeIndex so GoalWheelView never receives an out-of-bounds index
+            if mode == .daily && activeIndex >= goals.count {
+                activeIndex = max(0, goals.count - 1)
+            }
             Task { await health.refresh(goals: goals) }
+        }
+        .onChange(of: store.lifeGoals) { _, lifeGoals in
+            if mode == .life && activeIndex >= lifeGoals.count {
+                activeIndex = max(0, lifeGoals.count - 1)
+            }
         }
     }
 

@@ -124,6 +124,7 @@ struct GoalWheelView: View {
 
     private func drawWheel(ctx: GraphicsContext, center: CGPoint, radius: CGFloat) {
         guard !goals.isEmpty else { return }
+        let safeActive = min(activeIndex, goals.count - 1)
         let step = 2.0 * Double.pi / Double(goals.count)
 
         // ── Static reference rings ──────────────────────────────────────────
@@ -138,7 +139,7 @@ struct GoalWheelView: View {
             guard goal.progress > 0.04 else { continue }
 
             let lineLen    = radius * max(0.04, 1.0 - goal.progress)
-            let isActive   = i == activeIndex
+            let isActive   = i == safeActive
 
             // More progress → tighter, brighter glow
             let glowStr: CGFloat = isActive
@@ -165,7 +166,7 @@ struct GoalWheelView: View {
             let lineLen = radius * max(0.04, 1.0 - goal.progress)
             let endPt   = point(from: center, angle: angle, distance: lineLen)
             let farPt   = point(from: center, angle: angle, distance: radius)
-            let isActive = i == activeIndex
+            let isActive = i == safeActive
 
             // Ghost track to outer ring
             var track = Path()
@@ -212,7 +213,7 @@ struct GoalWheelView: View {
         // Center hub — tinted with active goal color, hinting it's tappable
         let hubR: CGFloat = min(radius * 0.075, 11)
         let hubRect = CGRect(x: center.x - hubR, y: center.y - hubR, width: hubR * 2, height: hubR * 2)
-        let activeColor = goals[activeIndex].color
+        let activeColor = goals[safeActive].color
         ctx.drawLayer { layer in
             layer.addFilter(.shadow(color: activeColor, radius: 10, x: 0, y: 0))
             layer.fill(Path(ellipseIn: hubRect), with: .color(activeColor.opacity(0.85)))

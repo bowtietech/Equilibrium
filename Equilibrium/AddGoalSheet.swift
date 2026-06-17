@@ -66,13 +66,15 @@ private struct AddDailyContent: View {
     ]
 
     @State private var tab: Tab = .suggestions
-    @State private var addedIDs       = Set<String>()   // suggestion names or HK ids
+    @State private var addedIDs          = Set<String>()   // names/HK ids added in this session
+    @State private var preExistingNames  = Set<String>()   // goal names already in store on open
+    @State private var preExistingHKIds  = Set<String>()   // HK ids already in store on open
     @State private var healthValues: [String: Double] = [:]
     @State private var loadingHealth  = false
     @State private var customName     = ""
     @State private var customIcon     = "star.fill"
     @State private var customColorIdx = 0
-    @State private var flash: String? = nil             // goal name for the "added!" flash
+    @State private var flash: String? = nil
 
     var body: some View {
         VStack(spacing: 0) {
@@ -92,6 +94,11 @@ private struct AddDailyContent: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                     .padding(.bottom, 8)
             }
+        }
+        .onAppear {
+            // Snapshot the store so we never remove goals the user already had data in.
+            preExistingNames = Set(store.goals.map { $0.name })
+            preExistingHKIds = Set(store.goals.compactMap { $0.healthKitIdentifier })
         }
         .task {
             if health.isAvailable && !health.isAuthorized {
@@ -150,13 +157,15 @@ private struct AddDailyContent: View {
 
     @ViewBuilder
     private func suggestionCard(_ sg: SuggestedGoal) -> some View {
-        let alreadyAdded = addedIDs.contains(sg.name) ||
-                           store.goals.contains { $0.name == sg.name }
+        let isPreExisting    = preExistingNames.contains(sg.name)
+        let isSessionAdded   = addedIDs.contains(sg.name)
+        let alreadyAdded     = isPreExisting || isSessionAdded
         Button {
-            if alreadyAdded {
+            if isSessionAdded {
+                // Only remove goals we added this session — never touch pre-existing data
                 store.goals.removeAll { $0.name == sg.name }
                 addedIDs.remove(sg.name)
-            } else {
+            } else if !isPreExisting {
                 store.goals.append(sg.toGoal())
                 addedIDs.insert(sg.name)
                 showFlash(sg.name)
@@ -221,15 +230,16 @@ private struct AddDailyContent: View {
 
     @ViewBuilder
     private func healthRow(_ template: HealthMetricTemplate) -> some View {
-        let alreadyAdded = addedIDs.contains(template.id) ||
-                           store.goals.contains { $0.healthKitIdentifier == template.id }
+        let isPreExisting  = preExistingHKIds.contains(template.id)
+        let isSessionAdded = addedIDs.contains(template.id)
+        let alreadyAdded   = isPreExisting || isSessionAdded
         let value = healthValues[template.id] ?? 0
 
         Button {
-            if alreadyAdded {
+            if isSessionAdded {
                 store.goals.removeAll { $0.healthKitIdentifier == template.id }
                 addedIDs.remove(template.id)
-            } else {
+            } else if !isPreExisting {
                 store.goals.append(Goal(
                     name: template.name, colorData: template.colorData, icon: template.icon,
                     items: [],
@@ -447,12 +457,13 @@ private struct AddLifeContent: View {
         "person.2.fill","leaf","dumbbell.fill","cross.fill","airplane","mountain.2.fill"
     ]
 
-    @State private var tab: Tab        = .suggestions
-    @State private var addedIDs        = Set<String>()
-    @State private var customName      = ""
-    @State private var customIcon      = "star.fill"
-    @State private var customColorIdx  = 0
-    @State private var flash: String?  = nil
+    @State private var tab: Tab              = .suggestions
+    @State private var addedIDs              = Set<String>()
+    @State private var preExistingNames      = Set<String>()
+    @State private var customName            = ""
+    @State private var customIcon            = "star.fill"
+    @State private var customColorIdx        = 0
+    @State private var flash: String?        = nil
 
     var body: some View {
         VStack(spacing: 0) {
@@ -471,6 +482,9 @@ private struct AddLifeContent: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                     .padding(.bottom, 8)
             }
+        }
+        .onAppear {
+            preExistingNames = Set(store.lifeGoals.map { $0.name })
         }
     }
 
@@ -523,8 +537,9 @@ private struct AddLifeContent: View {
 
     @ViewBuilder
     private func lifeGoalCard(_ sg: SuggestedLifeGoal) -> some View {
-        let alreadyAdded = addedIDs.contains(sg.name) ||
-                           store.lifeGoals.contains { $0.name == sg.name }
+        let isPreExisting  = preExistingNames.contains(sg.name)
+        let isSessionAdded = addedIDs.contains(sg.name)
+        let alreadyAdded   = isPreExisting || isSessionAdded
         let kindLabel: String = {
             switch sg.kind {
             case .metric: return "Metric"
@@ -533,10 +548,10 @@ private struct AddLifeContent: View {
         }()
 
         Button {
-            if alreadyAdded {
+            if isSessionAdded {
                 store.lifeGoals.removeAll { $0.name == sg.name }
                 addedIDs.remove(sg.name)
-            } else {
+            } else if !isPreExisting {
                 store.lifeGoals.append(sg.toLifeGoal())
                 addedIDs.insert(sg.name)
                 showFlash(sg.name)
