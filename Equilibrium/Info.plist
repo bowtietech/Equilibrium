@@ -38,6 +38,10 @@
 	</dict>
 	<key>NSHealthShareUsageDescription</key>
 	<string>Equilibrium reads your health data to automatically track progress toward your daily goals — steps, activity, sleep, and more.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Equilibrium uses your microphone to listen for voice commands so you can update goals hands-free.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Equilibrium transcribes your voice commands to update, create, and manage your goals.</string>
 	<key>UILaunchScreen</key>
 	<dict/>
 </dict>

@@ -53,6 +53,19 @@ final class WatchDataStore: NSObject, ObservableObject {
         }
     }
 
+    // MARK: - Send transcript to phone for AI processing
+
+    /// Sends the voice transcript to the paired iPhone for AI processing.
+    /// Returns true if the message was sent, false if the phone is not reachable.
+    @discardableResult
+    func sendTranscript(_ text: String) -> Bool {
+        guard WCSession.isSupported(),
+              WCSession.default.activationState == .activated,
+              WCSession.default.isReachable else { return false }
+        WCSession.default.sendMessage(["ai_transcript": text], replyHandler: nil)
+        return true
+    }
+
     private func applyContext(_ context: [String: Any]) {
         let decoder = JSONDecoder()
         if let data = context["goals"] as? Data,

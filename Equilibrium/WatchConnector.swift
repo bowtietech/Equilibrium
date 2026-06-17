@@ -16,6 +16,9 @@ final class WatchConnector: NSObject, ObservableObject {
     private var store: DataStore?
     private var cancellables = Set<AnyCancellable>()
 
+    /// Called on the main actor when the watch sends a voice transcript for AI processing.
+    var onTranscriptReceived: ((String) async -> Void)?
+
     override init() {
         super.init()
         guard WCSession.isSupported() else { return }
@@ -92,5 +95,17 @@ extension WatchConnector: WCSessionDelegate {
     nonisolated func sessionDidBecomeInactive(_ session: WCSession) {}
     nonisolated func sessionDidDeactivate(_ session: WCSession) {
         session.activate()
+    }
+
+    // Watch → phone messages (transcript for AI processing)
+    nonisolated func session(_ session: WCSession,
+                             didReceiveMessage message: [String: Any]) {
+        if let transcript = message["ai_transcript"] as? String {
+            Task { @MainActor [weak self] in
+                await self?.onTranscriptReceived?(transcript)
+            }
+            return
+        }
+        // Ignore other messages coming from watch (context is sent via updateApplicationContext)
     }
 }

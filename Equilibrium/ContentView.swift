@@ -60,6 +60,7 @@ struct ContentView: View {
                     Spacer()
                     scoreCard
                 }
+                AIAssistantOverlay()
             }
             //.preferredColorScheme(.dark) — handled by RootView
             .navigationBarHidden(true)

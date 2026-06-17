@@ -2,9 +2,10 @@ import SwiftUI
 
 @main
 struct EquilibriumApp: App {
-    @StateObject private var store  = DataStore()
-    @StateObject private var auth   = AuthManager()
-    @StateObject private var health = HealthKitManager()
+    @StateObject private var store     = DataStore()
+    @StateObject private var auth      = AuthManager()
+    @StateObject private var health    = HealthKitManager()
+    @StateObject private var assistant = AIGoalAssistant()
 
     var body: some Scene {
         WindowGroup {
@@ -12,7 +13,15 @@ struct EquilibriumApp: App {
                 .environmentObject(store)
                 .environmentObject(auth)
                 .environmentObject(health)
-                .task { WatchConnector.shared.connect(to: store) }
+                .environmentObject(assistant)
+                .task {
+                    WatchConnector.shared.connect(to: store)
+                    // Forward watch voice transcripts to the AI assistant
+                    WatchConnector.shared.onTranscriptReceived = { [weak assistant, weak store] text in
+                        guard let assistant, let store else { return }
+                        await assistant.process(transcript: text, store: store)
+                    }
+                }
         }
     }
 }

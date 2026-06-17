@@ -150,6 +150,7 @@ struct ProfileView: View {
                     personalSection
                     preferencesSection
                     healthSection
+                    aiSection
                     aboutSection
                     accountSection
                 }
@@ -431,6 +432,55 @@ struct ProfileView: View {
     }
 
     // MARK: - About section
+
+    // MARK: - AI Assistant section
+
+    @AppStorage("openai_api_key") private var openAIKey: String = ""
+    @State private var showKey = false
+
+    private var aiSection: some View {
+        Section {
+            profileRow(icon: "waveform.badge.mic", label: "OpenAI API Key") {
+                HStack(spacing: 6) {
+                    Group {
+                        if showKey {
+                            TextField("sk-...", text: $openAIKey)
+                                .autocorrectionDisabled()
+                                .textInputAutocapitalization(.never)
+                        } else {
+                            SecureField("sk-...", text: $openAIKey)
+                        }
+                    }
+                    .font(.system(size: 13, design: .monospaced))
+                    .foregroundStyle(openAIKey.isEmpty ? .secondary : .primary)
+                    .frame(maxWidth: 160)
+
+                    Button {
+                        showKey.toggle()
+                    } label: {
+                        Image(systemName: showKey ? "eye.slash" : "eye")
+                            .foregroundStyle(.secondary)
+                            .font(.system(size: 13))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+
+            if openAIKey.isEmpty {
+                HStack(spacing: 8) {
+                    Image(systemName: "info.circle")
+                        .foregroundStyle(.secondary)
+                        .font(.system(size: 12))
+                    Text("Enter your key to enable the AI voice assistant (mic button on the main screen).")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
+                }
+                .listRowBackground(rowBG)
+            }
+        } header: { sectionHeader("AI Voice Assistant") }
+        .listRowBackground(rowBG)
+        .listRowSeparatorTint(Color.appRowFill)
+    }
 
     private var aboutSection: some View {
         Section {

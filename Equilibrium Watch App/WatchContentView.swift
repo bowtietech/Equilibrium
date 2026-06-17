@@ -75,6 +75,10 @@ struct WatchGoalPage: View {
                         .ignoresSafeArea()
                 }
 
+                // ── AI mic button ────────────────────────────────────────────
+                WatchAIButton()
+                    .ignoresSafeArea()
+
                 // ── Label at the absolute bottom edge ───────────────────────
                 VStack(spacing: 0) {
                     Spacer()
