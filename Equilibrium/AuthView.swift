@@ -1,4 +1,5 @@
 import SwiftUI
+import AuthenticationServices
 
 struct AuthView: View {
     @EnvironmentObject private var auth: AuthManager
@@ -8,6 +9,7 @@ struct AuthView: View {
     @State private var password      = ""
     @State private var isLoading     = false
     @State private var errorMessage: String?
+    @State private var socialLoading: OAuthProvider?
 
     /// Non-nil when signup succeeded but needs email confirmation
     @State private var pendingEmail: String?
@@ -87,10 +89,101 @@ struct AuthView: View {
                 .padding(.horizontal, 24)
                 .animation(.spring(response: 0.3), value: errorMessage)
 
+                divider
+                socialButtons.padding(.horizontal, 24)
+
                 Spacer()
             }
         }
         .scrollDismissesKeyboard(.interactively)
+    }
+
+    // MARK: - Social login
+
+    private var divider: some View {
+        HStack(spacing: 12) {
+            Rectangle().fill(.white.opacity(0.1)).frame(height: 1)
+            Text("or")
+                .font(.system(size: 12, design: .monospaced))
+                .foregroundStyle(.white.opacity(0.25))
+            Rectangle().fill(.white.opacity(0.1)).frame(height: 1)
+        }
+        .padding(.horizontal, 24)
+    }
+
+    private var socialButtons: some View {
+        VStack(spacing: 10) {
+            // Apple — uses the native button + Supabase id-token exchange
+            SignInWithAppleButton(.signIn) { request in
+                auth.prepareAppleRequest(request)
+            } onCompletion: { result in
+                Task {
+                    do {
+                        try await auth.handleAppleCompletion(result)
+                    } catch {
+                        errorMessage = error.localizedDescription
+                    }
+                }
+            }
+            .signInWithAppleButtonStyle(.white)
+            .frame(height: 52)
+            .cornerRadius(14)
+
+            // Google
+            oauthButton(for: .google,
+                        background: .white,
+                        foreground: Color(red: 0.13, green: 0.13, blue: 0.13)) {
+                await signInWithOAuth(.google)
+            }
+
+            // Facebook
+            oauthButton(for: .facebook,
+                        background: Color(red: 0.23, green: 0.35, blue: 0.60),
+                        foreground: .white) {
+                await signInWithOAuth(.facebook)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func oauthButton(
+        for provider: OAuthProvider,
+        background: Color,
+        foreground: Color,
+        action: @escaping () async -> Void
+    ) -> some View {
+        Button {
+            Task { await action() }
+        } label: {
+            ZStack {
+                RoundedRectangle(cornerRadius: 14).fill(background).frame(height: 52)
+                if socialLoading == provider {
+                    ProgressView().tint(foreground)
+                } else {
+                    Text(provider.label)
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(foreground)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .disabled(socialLoading != nil || isLoading)
+    }
+
+    private func signInWithOAuth(_ provider: OAuthProvider) async {
+        socialLoading = provider
+        errorMessage = nil
+        do {
+            try await auth.signInWithOAuth(provider: provider)
+        } catch {
+            // ASWebAuthenticationSession cancellations are expected — don't show an error
+            let nsErr = error as NSError
+            if !(nsErr.domain == ASWebAuthenticationSessionErrorDomain
+                 && nsErr.code == ASWebAuthenticationSessionError.canceledLogin.rawValue) {
+                errorMessage = error.localizedDescription
+            }
+        }
+        socialLoading = nil
     }
 
     // MARK: - Confirmation pending

@@ -1,5 +1,21 @@
 import SwiftUI
 import Supabase
+import AuthenticationServices
+import CryptoKit
+
+// MARK: - Presentation context for ASWebAuthenticationSession
+
+private final class WebAuthContext: NSObject, ASWebAuthenticationPresentationContextProviding {
+    static let shared = WebAuthContext()
+    func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap(\.windows)
+            .first(where: \.isKeyWindow) ?? .init()
+    }
+}
+
+// MARK: - AuthManager
 
 @MainActor
 final class AuthManager: ObservableObject {
@@ -10,6 +26,11 @@ final class AuthManager: ObservableObject {
     var userId: UUID?         { session?.user.id }
     var userEmail: String?    { session?.user.email }
 
+    // Retained while an in-app OAuth sheet is open
+    private var webSession: ASWebAuthenticationSession?
+    // Nonce used for the current Sign in with Apple request
+    private var pendingNonce: (raw: String, hashed: String)?
+
     init() {
         Task { await start() }
     }
@@ -17,24 +38,20 @@ final class AuthManager: ObservableObject {
     // MARK: - Lifecycle
 
     private func start() async {
-        // Restore persisted session (Supabase stores it in the keychain automatically)
         session = try? await supabase.auth.session
         isLoading = false
-
-        // Keep in sync with any future auth state changes
         for await (_, newSession) in supabase.auth.authStateChanges {
             session = newSession
         }
     }
 
-    // MARK: - Auth actions
+    // MARK: - Email / password
 
     func signIn(email: String, password: String) async throws {
         try await supabase.auth.signIn(email: email, password: password)
     }
 
-    /// Returns `true` when the account was created but still needs email confirmation.
-    /// Returns `false` when the user is signed in immediately (confirmation disabled).
+    /// Returns `true` when email confirmation is still required.
     @discardableResult
     func signUp(email: String, password: String) async throws -> Bool {
         let response = try await supabase.auth.signUp(
@@ -49,31 +66,115 @@ final class AuthManager: ObservableObject {
         try await supabase.auth.signOut()
     }
 
-    // MARK: - Deep link handling (email confirmation / OAuth callbacks)
+    // MARK: - Sign in with Apple
+
+    /// Call this from the `SignInWithAppleButton` request handler to set up the nonce.
+    func prepareAppleRequest(_ request: ASAuthorizationAppleIDRequest) {
+        let nonce = makeNonce()
+        pendingNonce = nonce
+        request.requestedScopes = [.fullName, .email]
+        request.nonce = nonce.hashed
+    }
+
+    /// Call this from the `SignInWithAppleButton` completion handler.
+    func handleAppleCompletion(_ result: Result<ASAuthorization, Error>) async throws {
+        switch result {
+        case .failure(let error):
+            throw error
+        case .success(let authorization):
+            guard
+                let credential = authorization.credential as? ASAuthorizationAppleIDCredential,
+                let tokenData   = credential.identityToken,
+                let idToken     = String(data: tokenData, encoding: .utf8),
+                let nonce       = pendingNonce
+            else { return }
+
+            try await supabase.auth.signInWithIdToken(
+                credentials: .init(provider: .apple, idToken: idToken, nonce: nonce.raw)
+            )
+            pendingNonce = nil
+        }
+    }
+
+    // MARK: - OAuth (Google / Facebook) via ASWebAuthenticationSession
+
+    func signInWithOAuth(provider: OAuthProvider) async throws {
+        let authURL = try await supabase.auth.signInWithOAuth(
+            provider: provider.supabaseProvider,
+            redirectTo: URL(string: "equilibrium://auth-callback")!
+        )
+
+        let callbackURL: URL = try await withCheckedThrowingContinuation { continuation in
+            let ws = ASWebAuthenticationSession(
+                url: authURL,
+                callbackURLScheme: "equilibrium"
+            ) { url, error in
+                if let error { continuation.resume(throwing: error); return }
+                if let url   { continuation.resume(returning: url) }
+            }
+            ws.prefersEphemeralWebBrowserSession = false
+            ws.presentationContextProvider = WebAuthContext.shared
+            ws.start()
+            webSession = ws
+        }
+
+        await handle(url: callbackURL)
+        webSession = nil
+    }
+
+    // MARK: - Deep link handler (email confirmation / OAuth callbacks)
 
     func handle(url: URL) async {
         let comps = URLComponents(url: url, resolvingAgainstBaseURL: false)
 
-        // PKCE flow: ?code=XXX
+        // PKCE: ?code=XXX
         if let code = comps?.queryItems?.first(where: { $0.name == "code" })?.value {
             try? await supabase.auth.exchangeCodeForSession(authCode: code)
             return
         }
 
-        // Implicit flow: #access_token=XXX&refresh_token=YYY
+        // Implicit: #access_token=XXX&refresh_token=YYY
         if let fragment = comps?.fragment {
             let params = fragment
                 .split(separator: "&")
-                .reduce(into: [String: String]()) { dict, pair in
+                .reduce(into: [String: String]()) { d, pair in
                     let kv = pair.split(separator: "=", maxSplits: 1)
-                    if kv.count == 2 {
-                        dict[String(kv[0])] = String(kv[1])
-                            .removingPercentEncoding ?? String(kv[1])
-                    }
+                    if kv.count == 2 { d[String(kv[0])] = String(kv[1]) }
                 }
             if let at = params["access_token"], let rt = params["refresh_token"] {
                 try? await supabase.auth.setSession(accessToken: at, refreshToken: rt)
             }
+        }
+    }
+
+    // MARK: - Nonce helpers
+
+    private func makeNonce() -> (raw: String, hashed: String) {
+        var bytes = [UInt8](repeating: 0, count: 32)
+        _ = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
+        let raw = bytes.map { String(format: "%02x", $0) }.joined()
+        let hashed = SHA256.hash(data: Data(raw.utf8))
+            .map { String(format: "%02x", $0) }.joined()
+        return (raw, hashed)
+    }
+}
+
+// MARK: - OAuthProvider
+
+enum OAuthProvider {
+    case google, facebook
+
+    var supabaseProvider: Provider {
+        switch self {
+        case .google:   return .google
+        case .facebook: return .facebook
+        }
+    }
+
+    var label: String {
+        switch self {
+        case .google:   return "Continue with Google"
+        case .facebook: return "Continue with Facebook"
         }
     }
 }
