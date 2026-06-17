@@ -122,10 +122,40 @@ struct GoalWheelView: View {
     private func drawWheel(ctx: GraphicsContext, center: CGPoint, radius: CGFloat) {
         let step = 2.0 * Double.pi / Double(goals.count)
 
-        drawRing(ctx: ctx, center: center, radius: radius,          opacity: 0.10)
-        drawRing(ctx: ctx, center: center, radius: radius * 0.5,    opacity: 0.05)
-        drawRing(ctx: ctx, center: center, radius: radius * 0.25,   opacity: 0.04)
+        // ── Static reference rings ──────────────────────────────────────────
+        drawRing(ctx: ctx, center: center, radius: radius,        opacity: 0.10)
+        drawRing(ctx: ctx, center: center, radius: radius * 0.5,  opacity: 0.05)
+        drawRing(ctx: ctx, center: center, radius: radius * 0.25, opacity: 0.04)
 
+        // ── Progress rings — one per goal, drawn before spokes ──────────────
+        // Each ring sits at the dot's current radius. Opacity and glow radius
+        // both scale with progress so the ring brightens as the dot nears center.
+        for (i, goal) in goals.enumerated() {
+            guard goal.progress > 0.04 else { continue }
+
+            let lineLen    = radius * max(0.04, 1.0 - goal.progress)
+            let isActive   = i == activeIndex
+
+            // More progress → tighter, brighter glow
+            let glowStr: CGFloat = isActive
+                ? CGFloat(goal.progress) * 1.0
+                : CGFloat(goal.progress) * 0.55
+            let glowBlur: CGFloat = 6 + (1.0 - CGFloat(goal.progress)) * 10   // shrinks toward center
+
+            let ringRect = CGRect(x: center.x - lineLen, y: center.y - lineLen,
+                                  width: lineLen * 2, height: lineLen * 2)
+
+            // Outer soft halo
+            ctx.drawLayer { layer in
+                layer.addFilter(.shadow(color: goal.color.opacity(glowStr),
+                                        radius: glowBlur, x: 0, y: 0))
+                layer.stroke(Path(ellipseIn: ringRect),
+                             with: .color(goal.color.opacity(glowStr * 0.5)),
+                             lineWidth: isActive ? 1.5 : 1.0)
+            }
+        }
+
+        // ── Spokes, dots ────────────────────────────────────────────────────
         for (i, goal) in goals.enumerated() {
             let angle   = -(Double.pi / 2) + Double(i) * step + currentRotation
             let lineLen = radius * max(0.04, 1.0 - goal.progress)
