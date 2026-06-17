@@ -1,16 +1,19 @@
 {
   "images" : [
     {
+      "filename" : "AppIcon.png",
       "idiom" : "watch",
       "scale" : "2x",
       "screenWidth" : "<=145"
     },
     {
+      "filename" : "AppIcon.png",
       "idiom" : "watch",
       "scale" : "2x",
       "screenWidth" : ">145"
     },
     {
+      "filename" : "AppIcon.png",
       "idiom" : "watch-marketing",
       "scale" : "1x",
       "size" : "1024x1024"
