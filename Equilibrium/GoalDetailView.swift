@@ -22,6 +22,8 @@ struct GoalDetailView: View {
     @State private var showingAddSheet   = false
     @State private var editingItemID: UUID? = nil
     @State private var editBuffer        = ""
+    @State private var editingTitle      = false
+    @State private var titleBuffer       = ""
 
     // Add-sheet state
     @State private var newItemName       = ""
@@ -108,9 +110,28 @@ struct GoalDetailView: View {
                 .frame(width: 110, height: 110)
 
                 VStack(spacing: 6) {
-                    Text(goal.name)
-                        .font(.system(size: 30, weight: .bold, design: .rounded))
-                        .foregroundStyle(goal.color)
+                    if editingTitle {
+                        HStack(spacing: 8) {
+                            TextField("Goal name", text: $titleBuffer)
+                                .font(.system(size: 26, weight: .bold, design: .rounded))
+                                .multilineTextAlignment(.center)
+                                .foregroundStyle(goal.color)
+                                .tint(goal.color)
+                                .onSubmit { commitTitle() }
+                            Button("Done") { commitTitle() }
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(goal.color)
+                        }
+                        .padding(.horizontal, 20)
+                    } else {
+                        Text(goal.name)
+                            .font(.system(size: 30, weight: .bold, design: .rounded))
+                            .foregroundStyle(goal.color)
+                            .onTapGesture {
+                                titleBuffer = goal.name
+                                withAnimation { editingTitle = true }
+                            }
+                    }
 
                     if goal.isHealthBacked, let target = goal.healthKitTarget,
                        let unit = goal.healthKitUnit {
@@ -130,12 +151,23 @@ struct GoalDetailView: View {
                             .foregroundStyle(.white.opacity(0.25))
                     }
                 }
+                if !editingTitle {
+                    Text("tap name to rename")
+                        .font(.system(size: 10, design: .monospaced))
+                        .foregroundStyle(.white.opacity(0.15))
+                }
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 28)
             .listRowBackground(Color.clear)
             .listRowSeparator(.hidden)
         }
+    }
+
+    private func commitTitle() {
+        let t = titleBuffer.trimmingCharacters(in: .whitespaces)
+        if !t.isEmpty { goal.name = t }
+        withAnimation { editingTitle = false }
     }
 
     private func formattedValue(_ value: Double, unit: String) -> String {

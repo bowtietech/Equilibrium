@@ -38,6 +38,8 @@ private struct MetricGoalDetail: View {
 
     @State private var showingLog  = false
     @State private var logText     = ""
+    @State private var editingTitle = false
+    @State private var titleBuffer  = ""
 
     private var metricBinding: Binding<MetricData> {
         Binding(
@@ -114,9 +116,25 @@ private struct MetricGoalDetail: View {
             .frame(width: 110, height: 110)
 
             VStack(spacing: 6) {
-                Text(goal.name)
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
-                    .foregroundStyle(goal.color)
+                if editingTitle {
+                    HStack(spacing: 8) {
+                        TextField("Goal name", text: $titleBuffer)
+                            .font(.system(size: 24, weight: .bold, design: .rounded))
+                            .multilineTextAlignment(.center)
+                            .foregroundStyle(goal.color)
+                            .tint(goal.color)
+                            .onSubmit { commitTitle() }
+                        Button("Done") { commitTitle() }
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(goal.color)
+                    }
+                    .padding(.horizontal, 20)
+                } else {
+                    Text(goal.name)
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                        .foregroundStyle(goal.color)
+                        .onTapGesture { titleBuffer = goal.name; withAnimation { editingTitle = true } }
+                }
 
                 HStack(spacing: 12) {
                     metricPill(label: "Current", value: data.currentLabel)
@@ -130,9 +148,20 @@ private struct MetricGoalDetail: View {
                     .font(.system(size: 13, design: .monospaced))
                     .foregroundStyle(.white.opacity(0.35))
             }
+            if !editingTitle {
+                Text("tap name to rename")
+                    .font(.system(size: 10, design: .monospaced))
+                    .foregroundStyle(.white.opacity(0.15))
+            }
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 24)
+    }
+
+    private func commitTitle() {
+        let t = titleBuffer.trimmingCharacters(in: .whitespaces)
+        if !t.isEmpty { goal.name = t }
+        withAnimation { editingTitle = false }
     }
 
     private func metricPill(label: String, value: String) -> some View {
@@ -275,10 +304,15 @@ private struct ProjectGoalDetail: View {
     @Binding var goal: LifeGoal
     let subgoals: [SubGoal]
 
-    @State private var expandedIDs = Set<UUID>()
-    @State private var showingAdd  = false
+    @State private var expandedIDs  = Set<UUID>()
+    @State private var showingAdd   = false
     @State private var addParentID: UUID? = nil
-    @State private var newName     = ""
+    @State private var newName      = ""
+    @State private var editingTitle = false
+    @State private var titleBuffer  = ""
+    // Inline rename state for area / child rows
+    @State private var editingNodeID: UUID? = nil
+    @State private var nodeBuffer           = ""
 
     private var subgoalBinding: Binding<[SubGoal]> {
         Binding(
@@ -378,10 +412,27 @@ private struct ProjectGoalDetail: View {
             .buttonStyle(.plain)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(sub.name)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(sub.isComplete ? .white.opacity(0.4) : .white.opacity(0.9))
-                    .strikethrough(sub.isComplete, color: .white.opacity(0.2))
+                if editingNodeID == sub.id {
+                    HStack(spacing: 6) {
+                        TextField("Area name", text: $nodeBuffer)
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .tint(goal.color)
+                            .onSubmit { commitNode(parent) }
+                        Button("Done") { commitNode(parent) }
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(goal.color)
+                    }
+                } else {
+                    Text(sub.name)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(sub.isComplete ? .white.opacity(0.4) : .white.opacity(0.9))
+                        .strikethrough(sub.isComplete, color: .white.opacity(0.2))
+                        .onTapGesture {
+                            nodeBuffer = sub.name
+                            withAnimation { editingNodeID = sub.id }
+                        }
+                }
                 if hasChildren {
                     let done  = sub.children.filter { $0.progress >= 1.0 }.count
                     let total = sub.children.count
@@ -419,14 +470,19 @@ private struct ProjectGoalDetail: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
         .contentShape(Rectangle())
-        // Tap the row body (anywhere except the buttons) to expand/collapse
         .onTapGesture {
-            guard hasChildren else { return }
+            guard hasChildren, editingNodeID == nil else { return }
             withAnimation(.spring(response: 0.28)) {
                 if isExpanded { expandedIDs.remove(sub.id) }
                 else          { expandedIDs.insert(sub.id) }
             }
         }
+    }
+
+    private func commitNode(_ parent: Binding<SubGoal>) {
+        let t = nodeBuffer.trimmingCharacters(in: .whitespaces)
+        if !t.isEmpty { parent.wrappedValue.name = t }
+        withAnimation { editingNodeID = nil }
     }
 
     // MARK: Child row
@@ -452,16 +508,39 @@ private struct ProjectGoalDetail: View {
             }
             .buttonStyle(.plain)
 
-            Text(c.name)
-                .font(.system(size: 14))
-                .foregroundStyle(c.isComplete ? .white.opacity(0.35) : .white.opacity(0.82))
-                .strikethrough(c.isComplete, color: .white.opacity(0.2))
+            if editingNodeID == c.id {
+                HStack(spacing: 6) {
+                    TextField("Sub-goal name", text: $nodeBuffer)
+                        .font(.system(size: 14))
+                        .foregroundStyle(.white)
+                        .tint(color)
+                        .onSubmit { commitChildNode(child) }
+                    Button("Done") { commitChildNode(child) }
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(color)
+                }
+            } else {
+                Text(c.name)
+                    .font(.system(size: 14))
+                    .foregroundStyle(c.isComplete ? .white.opacity(0.35) : .white.opacity(0.82))
+                    .strikethrough(c.isComplete, color: .white.opacity(0.2))
+                    .onTapGesture {
+                        nodeBuffer = c.name
+                        withAnimation { editingNodeID = c.id }
+                    }
+            }
 
             Spacer()
         }
         .padding(.vertical, 10)
         .padding(.trailing, 16)
         .contentShape(Rectangle())
+    }
+
+    private func commitChildNode(_ child: Binding<SubGoal>) {
+        let t = nodeBuffer.trimmingCharacters(in: .whitespaces)
+        if !t.isEmpty { child.wrappedValue.name = t }
+        withAnimation { editingNodeID = nil }
     }
 
     // MARK: Header & Add sheet
@@ -482,17 +561,44 @@ private struct ProjectGoalDetail: View {
             .frame(width: 110, height: 110)
 
             VStack(spacing: 6) {
-                Text(goal.name)
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
-                    .foregroundStyle(goal.color)
+                if editingTitle {
+                    HStack(spacing: 8) {
+                        TextField("Goal name", text: $titleBuffer)
+                            .font(.system(size: 24, weight: .bold, design: .rounded))
+                            .multilineTextAlignment(.center)
+                            .foregroundStyle(goal.color)
+                            .tint(goal.color)
+                            .onSubmit { commitTitle() }
+                        Button("Done") { commitTitle() }
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(goal.color)
+                    }
+                    .padding(.horizontal, 20)
+                } else {
+                    Text(goal.name)
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                        .foregroundStyle(goal.color)
+                        .onTapGesture { titleBuffer = goal.name; withAnimation { editingTitle = true } }
+                }
                 let done  = subgoals.filter { $0.progress >= 1.0 }.count
                 Text("\(done) of \(subgoals.count) areas complete · \(Int(goal.progress * 100))%")
                     .font(.system(size: 13, design: .monospaced))
                     .foregroundStyle(.white.opacity(0.35))
+                if !editingTitle {
+                    Text("tap name to rename")
+                        .font(.system(size: 10, design: .monospaced))
+                        .foregroundStyle(.white.opacity(0.15))
+                }
             }
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 24)
+    }
+
+    private func commitTitle() {
+        let t = titleBuffer.trimmingCharacters(in: .whitespaces)
+        if !t.isEmpty { goal.name = t }
+        withAnimation { editingTitle = false }
     }
 
     private var addSheet: some View {
