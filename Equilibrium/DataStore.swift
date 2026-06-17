@@ -52,8 +52,9 @@ final class DataStore: ObservableObject {
     // MARK: - Onboarding
 
     /// Called when the user finishes the onboarding flow.
-    func completeOnboarding(goals newGoals: [Goal]) {
-        goals = newGoals
+    func completeOnboarding(goals newGoals: [Goal], lifeGoals newLifeGoals: [LifeGoal] = []) {
+        goals     = newGoals
+        lifeGoals = newLifeGoals
         UserDefaults.standard.set(true, forKey: Self.onboardedKey)
         needsOnboarding = false
         saveNow()

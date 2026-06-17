@@ -77,8 +77,12 @@ struct ContentView: View {
         .sheet(isPresented: $showHealthImport) {
             HealthImportView()
         }
-        .onChange(of: mode) { _, _ in
-            withAnimation(.spring(response: 0.4)) { activeIndex = 0 }
+        .onChange(of: mode) { _, newMode in
+            let count = newMode == .daily ? store.goals.count : store.lifeGoals.count
+            withAnimation(.spring(response: 0.4)) {
+                activeIndex = count > 0 ? 0 : 0   // always reset; guard in detailDestination handles empty
+            }
+            navigateToDetail = false
         }
         .task { await health.refresh(goals: store.goals) }
         .onChange(of: scenePhase) { _, phase in
@@ -93,9 +97,13 @@ struct ContentView: View {
     private var detailDestination: some View {
         switch mode {
         case .daily:
-            GoalDetailView(goal: $store.goals[activeIndex])
+            if store.goals.indices.contains(activeIndex) {
+                GoalDetailView(goal: $store.goals[activeIndex])
+            }
         case .life:
-            LifeGoalDetailView(goal: $store.lifeGoals[activeIndex])
+            if store.lifeGoals.indices.contains(activeIndex) {
+                LifeGoalDetailView(goal: $store.lifeGoals[activeIndex])
+            }
         }
     }
 

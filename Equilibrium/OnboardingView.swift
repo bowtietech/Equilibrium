@@ -64,20 +64,112 @@ struct SuggestedGoal: Identifiable {
     }
 }
 
+// MARK: - Suggested life goal catalog
+
+struct SuggestedLifeGoal: Identifiable {
+    let id   = UUID()
+    let name: String
+    let icon: String
+    let colorData: GoalColor
+    let category: String
+    let detail: String          // shown in card subtitle
+    let kind: LifeGoalKind
+
+    func toLifeGoal() -> LifeGoal {
+        LifeGoal(name: name, colorData: colorData, icon: icon, kind: kind)
+    }
+
+    static let all: [SuggestedLifeGoal] = [
+        // Health & Body
+        SuggestedLifeGoal(name: "Reach goal weight", icon: "scalemass.fill", colorData: .teal,
+                          category: "Health",
+                          detail: "Track body weight toward a target",
+                          kind: .metric(MetricData(unit: " lbs", direction: .lower,
+                                                   startValue: 200, currentValue: 200, targetValue: 175, history: []))),
+        SuggestedLifeGoal(name: "Run a 5K", icon: "figure.run", colorData: .orange,
+                          category: "Health",
+                          detail: "Build up to your first 5-kilometer run",
+                          kind: .project([
+                            SubGoal(name: "Walk 2 miles without stopping"),
+                            SubGoal(name: "Run 1 mile non-stop"),
+                            SubGoal(name: "Run 5K non-stop"),
+                          ])),
+        // Financial
+        SuggestedLifeGoal(name: "Build emergency fund", icon: "dollarsign.circle.fill", colorData: .green,
+                          category: "Financial",
+                          detail: "Save 3–6 months of expenses",
+                          kind: .metric(MetricData(unitPrefix: "$", unit: "", direction: .higher,
+                                                   startValue: 0, currentValue: 0, targetValue: 15_000, history: []))),
+        SuggestedLifeGoal(name: "Pay off debt", icon: "creditcard.fill", colorData: .amber,
+                          category: "Financial",
+                          detail: "Track your balance down to zero",
+                          kind: .metric(MetricData(unitPrefix: "$", unit: "", direction: .lower,
+                                                   startValue: 10_000, currentValue: 10_000, targetValue: 0, history: []))),
+        // Personal growth
+        SuggestedLifeGoal(name: "Write a book", icon: "book.fill", colorData: .purple,
+                          category: "Growth",
+                          detail: "From first draft to finished manuscript",
+                          kind: .project([
+                            SubGoal(name: "Outline chapters"),
+                            SubGoal(name: "Write first draft"),
+                            SubGoal(name: "Edit & revise"),
+                            SubGoal(name: "Publish or share"),
+                          ])),
+        SuggestedLifeGoal(name: "Learn a language", icon: "globe", colorData: .blue,
+                          category: "Growth",
+                          detail: "Reach conversational fluency",
+                          kind: .project([
+                            SubGoal(name: "Learn 500 vocabulary words"),
+                            SubGoal(name: "Complete beginner course"),
+                            SubGoal(name: "Hold a 5-minute conversation"),
+                          ])),
+        SuggestedLifeGoal(name: "Launch a side project", icon: "rocket.fill", colorData: .rose,
+                          category: "Growth",
+                          detail: "Take an idea from concept to reality",
+                          kind: .project([
+                            SubGoal(name: "Define the idea & audience"),
+                            SubGoal(name: "Build an MVP"),
+                            SubGoal(name: "Get first users / customers"),
+                          ])),
+        // Home & Life
+        SuggestedLifeGoal(name: "Home renovation", icon: "house.fill", colorData: .gold,
+                          category: "Home",
+                          detail: "Tackle a major home improvement project",
+                          kind: .project([
+                            SubGoal(name: "Define scope & budget"),
+                            SubGoal(name: "Hire contractors"),
+                            SubGoal(name: "Complete the work"),
+                          ])),
+        SuggestedLifeGoal(name: "Declutter & organize", icon: "tray.fill", colorData: .cyan,
+                          category: "Home",
+                          detail: "Create a calm, organized living space",
+                          kind: .project([
+                            SubGoal(name: "Declutter every room"),
+                            SubGoal(name: "Set up storage systems"),
+                            SubGoal(name: "Donate / sell excess"),
+                          ])),
+    ]
+
+    static var categories: [String] {
+        var seen = Set<String>()
+        return all.compactMap { seen.insert($0.category).inserted ? $0.category : nil }
+    }
+}
+
 // MARK: - OnboardingView
 
 struct OnboardingView: View {
     @EnvironmentObject private var store:  DataStore
     @EnvironmentObject private var health: HealthKitManager
 
-    @State private var step          = 0
-    @State private var pendingGoals: [Goal] = []
+    @State private var step               = 0
+    @State private var pendingGoals:      [Goal]     = []
+    @State private var pendingLifeGoals:  [LifeGoal] = []
 
-    private let totalSteps = 3
+    private let totalSteps = 4   // Welcome · Daily · Life · Review
 
     var body: some View {
         ZStack {
-            // Background
             Color(red: 0.04, green: 0.04, blue: 0.09).ignoresSafeArea()
             RadialGradient(
                 colors: [Color(red: 0.30, green: 0.20, blue: 0.60).opacity(0.35), .clear],
@@ -91,12 +183,25 @@ struct OnboardingView: View {
                     .padding(.bottom, 20)
 
                 ZStack {
-                    if step == 0 { WelcomeStep(onNext: nextStep)
-                                       .transition(stepTransition) }
-                    if step == 1 { PickerStep(pendingGoals: $pendingGoals, onNext: nextStep, onBack: prevStep)
-                                       .transition(stepTransition) }
-                    if step == 2 { ReviewStep(pendingGoals: $pendingGoals, onFinish: finish, onBack: prevStep)
-                                       .transition(stepTransition) }
+                    if step == 0 {
+                        WelcomeStep(onNext: nextStep)
+                            .transition(stepTransition)
+                    }
+                    if step == 1 {
+                        PickerStep(pendingGoals: $pendingGoals, onNext: nextStep, onBack: prevStep)
+                            .transition(stepTransition)
+                    }
+                    if step == 2 {
+                        LifeGoalPickerStep(pendingLifeGoals: $pendingLifeGoals,
+                                           onNext: nextStep, onBack: prevStep)
+                            .transition(stepTransition)
+                    }
+                    if step == 3 {
+                        ReviewStep(pendingGoals: $pendingGoals,
+                                   pendingLifeGoals: $pendingLifeGoals,
+                                   onFinish: finish, onBack: prevStep)
+                            .transition(stepTransition)
+                    }
                 }
                 .animation(.spring(response: 0.42, dampingFraction: 0.88), value: step)
             }
@@ -133,7 +238,7 @@ struct OnboardingView: View {
     }
 
     private func finish() {
-        store.completeOnboarding(goals: pendingGoals)
+        store.completeOnboarding(goals: pendingGoals, lifeGoals: pendingLifeGoals)
         Task { await health.refresh(goals: pendingGoals) }
     }
 }
@@ -624,20 +729,280 @@ private struct PickerStep: View {
     }
 }
 
-// MARK: - Step 2: Review
+// MARK: - Step 2: Life Goal Picker
 
-private struct ReviewStep: View {
-    @Binding var pendingGoals: [Goal]
-    let onFinish: () -> Void
-    let onBack:   () -> Void
+private struct LifeGoalPickerStep: View {
+    @Binding var pendingLifeGoals: [LifeGoal]
+    let onNext: () -> Void
+    let onBack: () -> Void
+
+    @State private var selectedIDs = Set<UUID>()
+    @State private var customName     = ""
+    @State private var customIcon     = "star.fill"
+    @State private var customColorIdx = 0
+    @State private var tab: LifeTab   = .suggestions
+
+    private enum LifeTab: String, CaseIterable {
+        case suggestions = "Suggestions"
+        case custom      = "Custom"
+    }
+
+    private static let colorPalette: [GoalColor] = [
+        .purple, .orange, .green, .cyan, .pink, .indigo, .teal, .gold, .rose, .violet, .blue, .amber
+    ]
+    private static let iconOptions = [
+        "star.fill","heart.fill","trophy.fill","rocket.fill","book.fill","graduationcap.fill",
+        "house.fill","briefcase.fill","dollarsign.circle.fill","creditcard.fill","chart.line.uptrend.xyaxis",
+        "figure.run","scalemass.fill","globe","music.note","paintbrush.fill","camera.fill",
+        "person.2.fill","leaf","dumbbell.fill","cross.fill","airplane","mountain.2.fill"
+    ]
 
     var body: some View {
         VStack(spacing: 0) {
             VStack(spacing: 6) {
-                Text(pendingGoals.isEmpty ? "No goals yet" : "Your goals")
+                Text("Big picture goals")
                     .font(.system(size: 24, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
-                Text(pendingGoals.isEmpty
+                Text("Long-term ambitions, projects, and milestones.")
+                    .font(.system(size: 13))
+                    .foregroundStyle(.white.opacity(0.4))
+                    .multilineTextAlignment(.center)
+            }
+            .padding(.horizontal, 28)
+            .padding(.bottom, 20)
+
+            // Tab bar
+            HStack(spacing: 0) {
+                ForEach(LifeTab.allCases, id: \.self) { t in
+                    Button { withAnimation(.spring(response: 0.3)) { tab = t } } label: {
+                        Text(t.rawValue)
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(tab == t ? .white : .white.opacity(0.35))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .background(tab == t ? Color.white.opacity(0.12) : Color.clear,
+                                        in: RoundedRectangle(cornerRadius: 10))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(4)
+            .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 14))
+            .padding(.horizontal, 24)
+            .padding(.bottom, 12)
+
+            Group {
+                if tab == .suggestions { suggestionsTab }
+                else                   { customTab }
+            }
+            .animation(.easeInOut(duration: 0.18), value: tab)
+            .frame(maxHeight: .infinity)
+
+            VStack(spacing: 12) {
+                if !pendingLifeGoals.isEmpty { selectedChips }
+                HStack(spacing: 12) {
+                    backButton(action: onBack)
+                    ctaButton(pendingLifeGoals.isEmpty ? "Skip" : "Review (\(pendingLifeGoals.count))",
+                              action: onNext)
+                }
+                .padding(.horizontal, 24)
+            }
+            .padding(.bottom, 40)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    // MARK: Suggestions
+
+    private var suggestionsTab: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 20) {
+                ForEach(SuggestedLifeGoal.categories, id: \.self) { cat in
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(cat.uppercased())
+                            .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                            .foregroundStyle(.white.opacity(0.3))
+                            .padding(.leading, 4)
+
+                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                            ForEach(SuggestedLifeGoal.all.filter { $0.category == cat }) { sg in
+                                lifeGoalCard(sg)
+                            }
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 12)
+        }
+    }
+
+    @ViewBuilder
+    private func lifeGoalCard(_ sg: SuggestedLifeGoal) -> some View {
+        let isSelected = selectedIDs.contains(sg.id)
+        let kindLabel: String = {
+            switch sg.kind {
+            case .metric: return "Metric"
+            case .project(let s): return "\(s.count) milestones"
+            }
+        }()
+
+        Button { toggle(sg) } label: {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Image(systemName: sg.icon)
+                        .font(.system(size: 18))
+                        .foregroundStyle(sg.colorData.value)
+                    Spacer()
+                    if isSelected {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(sg.colorData.value)
+                            .font(.system(size: 16))
+                    }
+                }
+                Text(sg.name)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(.white)
+                Text(kindLabel)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.white.opacity(0.35))
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(isSelected ? sg.colorData.value.opacity(0.18) : Color.white.opacity(0.05))
+                    .overlay(RoundedRectangle(cornerRadius: 14)
+                        .stroke(isSelected ? sg.colorData.value.opacity(0.5) : Color.clear, lineWidth: 1))
+            )
+        }
+        .buttonStyle(.plain)
+        .animation(.spring(response: 0.25), value: isSelected)
+    }
+
+    // MARK: Custom
+
+    private var customTab: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 20) {
+                VStack(alignment: .leading, spacing: 8) {
+                    sectionLabel("Goal name")
+                    TextField("e.g. Build my dream home", text: $customName)
+                        .font(.system(size: 15)).foregroundStyle(.white).tint(.white)
+                        .padding(14)
+                        .background(.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 12))
+                }
+                VStack(alignment: .leading, spacing: 8) {
+                    sectionLabel("Color")
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 10) {
+                            ForEach(Self.colorPalette.indices, id: \.self) { i in
+                                Circle().fill(Self.colorPalette[i].value).frame(width: 34, height: 34)
+                                    .overlay(Circle().stroke(.white.opacity(customColorIdx == i ? 0.9 : 0), lineWidth: 2.5).padding(-3))
+                                    .onTapGesture { customColorIdx = i }
+                                    .animation(.spring(response: 0.25), value: customColorIdx)
+                            }
+                        }.padding(.horizontal, 2)
+                    }
+                }
+                VStack(alignment: .leading, spacing: 8) {
+                    sectionLabel("Icon")
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: 10) {
+                        ForEach(Self.iconOptions, id: \.self) { sym in
+                            Button { customIcon = sym } label: {
+                                Image(systemName: sym).font(.system(size: 17))
+                                    .foregroundStyle(customIcon == sym ? Self.colorPalette[customColorIdx].value : .white.opacity(0.4))
+                                    .frame(width: 40, height: 40)
+                                    .background(RoundedRectangle(cornerRadius: 10)
+                                        .fill(customIcon == sym ? Self.colorPalette[customColorIdx].value.opacity(0.18) : Color.white.opacity(0.05)))
+                            }.buttonStyle(.plain)
+                        }
+                    }
+                }
+                Button { addCustom() } label: {
+                    Label("Add life goal", systemImage: "plus")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(customName.trimmingCharacters(in: .whitespaces).isEmpty ? .white.opacity(0.25) : .white)
+                        .frame(maxWidth: .infinity).frame(height: 48)
+                        .background(
+                            customName.trimmingCharacters(in: .whitespaces).isEmpty
+                                ? Color.white.opacity(0.06)
+                                : Self.colorPalette[customColorIdx].value.opacity(0.28),
+                            in: RoundedRectangle(cornerRadius: 12))
+                }
+                .buttonStyle(.plain)
+                .disabled(customName.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+            .padding(.horizontal, 24).padding(.bottom, 12)
+        }
+    }
+
+    // MARK: Chips
+
+    private var selectedChips: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(pendingLifeGoals) { lg in
+                    HStack(spacing: 5) {
+                        Image(systemName: lg.icon).font(.system(size: 11)).foregroundStyle(lg.color)
+                        Text(lg.name).font(.system(size: 12, weight: .medium)).foregroundStyle(.white)
+                        Button { pendingLifeGoals.removeAll { $0.id == lg.id } } label: {
+                            Image(systemName: "xmark").font(.system(size: 9, weight: .bold)).foregroundStyle(.white.opacity(0.4))
+                        }.buttonStyle(.plain)
+                    }
+                    .padding(.horizontal, 10).padding(.vertical, 7)
+                    .background(lg.color.opacity(0.15), in: Capsule())
+                }
+            }.padding(.horizontal, 24)
+        }
+    }
+
+    // MARK: Helpers
+
+    private func toggle(_ sg: SuggestedLifeGoal) {
+        if selectedIDs.contains(sg.id) {
+            selectedIDs.remove(sg.id)
+            pendingLifeGoals.removeAll { $0.name == sg.name }
+        } else {
+            selectedIDs.insert(sg.id)
+            pendingLifeGoals.append(sg.toLifeGoal())
+        }
+    }
+
+    private func addCustom() {
+        let name = customName.trimmingCharacters(in: .whitespaces)
+        guard !name.isEmpty else { return }
+        pendingLifeGoals.append(
+            LifeGoal(name: name, colorData: Self.colorPalette[customColorIdx],
+                     icon: customIcon, kind: .project([]))
+        )
+        customName = ""
+    }
+
+    private func sectionLabel(_ text: String) -> some View {
+        Text(text.uppercased())
+            .font(.system(size: 10, weight: .semibold, design: .monospaced))
+            .foregroundStyle(.white.opacity(0.3))
+    }
+}
+
+// MARK: - Step 3: Review
+
+private struct ReviewStep: View {
+    @Binding var pendingGoals:     [Goal]
+    @Binding var pendingLifeGoals: [LifeGoal]
+    let onFinish: () -> Void
+    let onBack:   () -> Void
+
+    var body: some View {
+        let totalCount = pendingGoals.count + pendingLifeGoals.count
+
+        VStack(spacing: 0) {
+            VStack(spacing: 6) {
+                Text(totalCount == 0 ? "No goals yet" : "Your goals")
+                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+                Text(totalCount == 0
                      ? "You can always add goals from the main screen."
                      : "These will appear on your wheel. You can edit them anytime.")
                     .font(.system(size: 13))
@@ -647,13 +1012,18 @@ private struct ReviewStep: View {
             .padding(.horizontal, 28)
             .padding(.bottom, 20)
 
-            if pendingGoals.isEmpty {
+            if totalCount == 0 {
                 emptyState
             } else {
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 8) {
-                        ForEach(pendingGoals) { goal in
-                            goalRow(goal)
+                        if !pendingGoals.isEmpty {
+                            sectionHeader("Daily Goals")
+                            ForEach(pendingGoals) { goalRow($0, isLife: false) }
+                        }
+                        if !pendingLifeGoals.isEmpty {
+                            sectionHeader("Life Goals").padding(.top, pendingGoals.isEmpty ? 0 : 8)
+                            ForEach(pendingLifeGoals) { lifeGoalRow($0) }
                         }
                     }
                     .padding(.horizontal, 20)
@@ -662,7 +1032,7 @@ private struct ReviewStep: View {
             }
 
             VStack(spacing: 12) {
-                ctaButton(pendingGoals.isEmpty ? "Start fresh" : "Start your journey",
+                ctaButton(totalCount == 0 ? "Start fresh" : "Start your journey",
                           action: onFinish)
                     .padding(.horizontal, 24)
 
@@ -678,8 +1048,16 @@ private struct ReviewStep: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
+    private func sectionHeader(_ text: String) -> some View {
+        Text(text.uppercased())
+            .font(.system(size: 10, weight: .semibold, design: .monospaced))
+            .foregroundStyle(.white.opacity(0.3))
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.leading, 4)
+    }
+
     @ViewBuilder
-    private func goalRow(_ goal: Goal) -> some View {
+    private func goalRow(_ goal: Goal, isLife: Bool) -> some View {
         HStack(spacing: 14) {
             ZStack {
                 RoundedRectangle(cornerRadius: 10)
@@ -701,11 +1079,42 @@ private struct ReviewStep: View {
             }
             Spacer()
             Button { pendingGoals.removeAll { $0.id == goal.id } } label: {
-                Image(systemName: "trash")
-                    .font(.system(size: 14))
-                    .foregroundStyle(.white.opacity(0.25))
+                Image(systemName: "trash").font(.system(size: 14)).foregroundStyle(.white.opacity(0.25))
+            }.buttonStyle(.plain)
+        }
+        .padding(12)
+        .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 14))
+    }
+
+    @ViewBuilder
+    private func lifeGoalRow(_ goal: LifeGoal) -> some View {
+        let kindLabel: String = {
+            switch goal.kind {
+            case .metric: return "Metric goal"
+            case .project(let s): return s.isEmpty ? "Project" : "\(s.count) milestones"
             }
-            .buttonStyle(.plain)
+        }()
+        HStack(spacing: 14) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(goal.color.opacity(0.15))
+                    .frame(width: 42, height: 42)
+                Image(systemName: goal.icon)
+                    .font(.system(size: 17))
+                    .foregroundStyle(goal.color)
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(goal.name)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(.white)
+                Text(kindLabel)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.white.opacity(0.35))
+            }
+            Spacer()
+            Button { pendingLifeGoals.removeAll { $0.id == goal.id } } label: {
+                Image(systemName: "trash").font(.system(size: 14)).foregroundStyle(.white.opacity(0.25))
+            }.buttonStyle(.plain)
         }
         .padding(12)
         .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 14))
