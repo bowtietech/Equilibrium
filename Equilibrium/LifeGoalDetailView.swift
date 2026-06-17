@@ -36,10 +36,11 @@ private struct MetricGoalDetail: View {
     @Binding var goal: LifeGoal
     let data: MetricData
 
-    @State private var showingLog  = false
-    @State private var logText     = ""
+    @State private var showingLog   = false
+    @State private var logText      = ""
     @State private var editingTitle = false
     @State private var titleBuffer  = ""
+    @FocusState private var titleFocused: Bool
 
     private var metricBinding: Binding<MetricData> {
         Binding(
@@ -123,6 +124,7 @@ private struct MetricGoalDetail: View {
                             .multilineTextAlignment(.center)
                             .foregroundStyle(goal.color)
                             .tint(goal.color)
+                            .focused($titleFocused)
                             .onSubmit { commitTitle() }
                         Button("Done") { commitTitle() }
                             .font(.system(size: 13, weight: .semibold))
@@ -133,7 +135,11 @@ private struct MetricGoalDetail: View {
                     Text(goal.name)
                         .font(.system(size: 28, weight: .bold, design: .rounded))
                         .foregroundStyle(goal.color)
-                        .onTapGesture { titleBuffer = goal.name; withAnimation { editingTitle = true } }
+                        .onTapGesture {
+                            titleBuffer = goal.name
+                            editingTitle = true
+                            titleFocused = true
+                        }
                 }
 
                 HStack(spacing: 12) {
@@ -161,6 +167,7 @@ private struct MetricGoalDetail: View {
     private func commitTitle() {
         let t = titleBuffer.trimmingCharacters(in: .whitespaces)
         if !t.isEmpty { goal.name = t }
+        titleFocused = false
         withAnimation { editingTitle = false }
     }
 
@@ -304,15 +311,16 @@ private struct ProjectGoalDetail: View {
     @Binding var goal: LifeGoal
     let subgoals: [SubGoal]
 
-    @State private var expandedIDs  = Set<UUID>()
-    @State private var showingAdd   = false
+    @State private var expandedIDs   = Set<UUID>()
+    @State private var showingAdd    = false
     @State private var addParentID: UUID? = nil
-    @State private var newName      = ""
-    @State private var editingTitle = false
-    @State private var titleBuffer  = ""
-    // Inline rename state for area / child rows
+    @State private var newName       = ""
+    @State private var editingTitle  = false
+    @State private var titleBuffer   = ""
     @State private var editingNodeID: UUID? = nil
-    @State private var nodeBuffer           = ""
+    @State private var nodeBuffer    = ""
+    @FocusState private var titleFocused: Bool
+    @FocusState private var nodeFocused: Bool
 
     private var subgoalBinding: Binding<[SubGoal]> {
         Binding(
@@ -418,6 +426,7 @@ private struct ProjectGoalDetail: View {
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundStyle(.white)
                             .tint(goal.color)
+                            .focused($nodeFocused)
                             .onSubmit { commitNode(parent) }
                         Button("Done") { commitNode(parent) }
                             .font(.system(size: 12, weight: .semibold))
@@ -430,7 +439,8 @@ private struct ProjectGoalDetail: View {
                         .strikethrough(sub.isComplete, color: .white.opacity(0.2))
                         .onTapGesture {
                             nodeBuffer = sub.name
-                            withAnimation { editingNodeID = sub.id }
+                            editingNodeID = sub.id
+                            nodeFocused = true
                         }
                 }
                 if hasChildren {
@@ -482,6 +492,7 @@ private struct ProjectGoalDetail: View {
     private func commitNode(_ parent: Binding<SubGoal>) {
         let t = nodeBuffer.trimmingCharacters(in: .whitespaces)
         if !t.isEmpty { parent.wrappedValue.name = t }
+        nodeFocused = false
         withAnimation { editingNodeID = nil }
     }
 
@@ -514,6 +525,7 @@ private struct ProjectGoalDetail: View {
                         .font(.system(size: 14))
                         .foregroundStyle(.white)
                         .tint(color)
+                        .focused($nodeFocused)
                         .onSubmit { commitChildNode(child) }
                     Button("Done") { commitChildNode(child) }
                         .font(.system(size: 12, weight: .semibold))
@@ -526,7 +538,8 @@ private struct ProjectGoalDetail: View {
                     .strikethrough(c.isComplete, color: .white.opacity(0.2))
                     .onTapGesture {
                         nodeBuffer = c.name
-                        withAnimation { editingNodeID = c.id }
+                        editingNodeID = c.id
+                        nodeFocused = true
                     }
             }
 
@@ -540,6 +553,7 @@ private struct ProjectGoalDetail: View {
     private func commitChildNode(_ child: Binding<SubGoal>) {
         let t = nodeBuffer.trimmingCharacters(in: .whitespaces)
         if !t.isEmpty { child.wrappedValue.name = t }
+        nodeFocused = false
         withAnimation { editingNodeID = nil }
     }
 
@@ -568,6 +582,7 @@ private struct ProjectGoalDetail: View {
                             .multilineTextAlignment(.center)
                             .foregroundStyle(goal.color)
                             .tint(goal.color)
+                            .focused($titleFocused)
                             .onSubmit { commitTitle() }
                         Button("Done") { commitTitle() }
                             .font(.system(size: 13, weight: .semibold))
@@ -578,7 +593,11 @@ private struct ProjectGoalDetail: View {
                     Text(goal.name)
                         .font(.system(size: 28, weight: .bold, design: .rounded))
                         .foregroundStyle(goal.color)
-                        .onTapGesture { titleBuffer = goal.name; withAnimation { editingTitle = true } }
+                        .onTapGesture {
+                            titleBuffer = goal.name
+                            editingTitle = true
+                            titleFocused = true
+                        }
                 }
                 let done  = subgoals.filter { $0.progress >= 1.0 }.count
                 Text("\(done) of \(subgoals.count) areas complete · \(Int(goal.progress * 100))%")
@@ -598,6 +617,7 @@ private struct ProjectGoalDetail: View {
     private func commitTitle() {
         let t = titleBuffer.trimmingCharacters(in: .whitespaces)
         if !t.isEmpty { goal.name = t }
+        titleFocused = false
         withAnimation { editingTitle = false }
     }
 

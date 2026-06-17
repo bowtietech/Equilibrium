@@ -24,6 +24,7 @@ struct GoalDetailView: View {
     @State private var editBuffer        = ""
     @State private var editingTitle      = false
     @State private var titleBuffer       = ""
+    @FocusState private var titleFocused: Bool
 
     // Add-sheet state
     @State private var newItemName       = ""
@@ -117,6 +118,7 @@ struct GoalDetailView: View {
                                 .multilineTextAlignment(.center)
                                 .foregroundStyle(goal.color)
                                 .tint(goal.color)
+                                .focused($titleFocused)
                                 .onSubmit { commitTitle() }
                             Button("Done") { commitTitle() }
                                 .font(.system(size: 13, weight: .semibold))
@@ -129,7 +131,8 @@ struct GoalDetailView: View {
                             .foregroundStyle(goal.color)
                             .onTapGesture {
                                 titleBuffer = goal.name
-                                withAnimation { editingTitle = true }
+                                editingTitle = true
+                                titleFocused = true
                             }
                     }
 
@@ -167,6 +170,7 @@ struct GoalDetailView: View {
     private func commitTitle() {
         let t = titleBuffer.trimmingCharacters(in: .whitespaces)
         if !t.isEmpty { goal.name = t }
+        titleFocused = false
         withAnimation { editingTitle = false }
     }
 
