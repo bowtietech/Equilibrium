@@ -2,6 +2,38 @@ import SwiftUI
 
 // MARK: - Storage keys
 
+// MARK: - Theme preference (shared across the app via AppStorage)
+
+enum AppTheme: String, CaseIterable {
+    case system = "system"
+    case light  = "light"
+    case dark   = "dark"
+
+    var label: String {
+        switch self {
+        case .system: return "Auto"
+        case .light:  return "Light"
+        case .dark:   return "Dark"
+        }
+    }
+
+    var colorScheme: ColorScheme? {
+        switch self {
+        case .system: return nil
+        case .light:  return .light
+        case .dark:   return .dark
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .system: return "circle.lefthalf.filled"
+        case .light:  return "sun.max"
+        case .dark:   return "moon"
+        }
+    }
+}
+
 private enum PK {
     static let name         = "profile_name"
     static let tagline      = "profile_tagline"
@@ -12,6 +44,7 @@ private enum PK {
     static let reminderHour = "profile_reminder_h"
     static let avatarColor  = "profile_avatar_col"
     static let joinTS       = "profile_joined"
+    static let theme        = "app_theme"
 }
 
 // MARK: - ProfileView
@@ -40,6 +73,9 @@ struct ProfileView: View {
     @AppStorage(PK.reminderHour) private var reminderHour: Int = 8
     @AppStorage(PK.avatarColor)  private var colorIdx: Int  = 0
     @AppStorage(PK.joinTS)       private var joinTS: Double  = 0
+    @AppStorage(PK.theme)        private var themeRaw: String = AppTheme.system.rawValue
+
+    private var theme: AppTheme { AppTheme(rawValue: themeRaw) ?? .system }
 
     @Environment(\.dismiss) private var dismiss
     @FocusState private var nameFocused: Bool
@@ -118,7 +154,7 @@ struct ProfileView: View {
                 .listStyle(.plain)
                 .scrollContentBackground(.hidden)
             }
-            .preferredColorScheme(.dark)
+            .preferredColorScheme(theme.colorScheme)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -330,6 +366,33 @@ struct ProfileView: View {
 
     private var preferencesSection: some View {
         Section {
+            // Appearance
+            profileRow(icon: "paintpalette", label: "Appearance") {
+                HStack(spacing: 6) {
+                    ForEach(AppTheme.allCases, id: \.self) { t in
+                        Button {
+                            withAnimation(.spring(response: 0.25)) { themeRaw = t.rawValue }
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: t.icon)
+                                    .font(.system(size: 11))
+                                Text(t.label)
+                                    .font(.system(size: 11, weight: .medium))
+                            }
+                            .foregroundStyle(theme == t ? .white : .white.opacity(0.4))
+                            .padding(.horizontal, 9)
+                            .padding(.vertical, 6)
+                            .background(
+                                theme == t ? accent.opacity(0.28) : Color.white.opacity(0.06),
+                                in: Capsule()
+                            )
+                        }
+                        .buttonStyle(.plain)
+                        .animation(.spring(response: 0.25), value: theme == t)
+                    }
+                }
+            }
+
             // Weight unit
             profileRow(icon: "scalemass", label: "Weight Unit") {
                 Picker("", selection: $weightLbs) {

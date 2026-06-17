@@ -22,6 +22,9 @@ struct RootView: View {
     @EnvironmentObject private var store: DataStore
     @EnvironmentObject private var auth: AuthManager
 
+    @AppStorage("app_theme") private var themeRaw: String = AppTheme.system.rawValue
+    private var theme: AppTheme { AppTheme(rawValue: themeRaw) ?? .system }
+
     var body: some View {
         Group {
             if auth.isLoading {
@@ -38,6 +41,7 @@ struct RootView: View {
                 AuthView()
             }
         }
+        .preferredColorScheme(theme.colorScheme)
         .animation(.easeInOut(duration: 0.35), value: store.needsOnboarding)
         // When the user signs in (or session is restored), pull their cloud data
         .onChange(of: auth.session?.user.id) { _, userId in
@@ -60,6 +64,5 @@ struct RootView: View {
                     .tint(.white.opacity(0.25))
             }
         }
-        .preferredColorScheme(.dark)
     }
 }
