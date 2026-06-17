@@ -15,6 +15,7 @@
 		BB000000000000000000000D /* LifeGoal.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000000C /* LifeGoal.swift */; };
 		BB000000000000000000000E /* LifeGoalDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000000D /* LifeGoalDetailView.swift */; };
 		BB000000000000000000000F /* LifeGoal.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000000C /* LifeGoal.swift */; };
+		BB0000000000000000000010 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000000E /* ProfileView.swift */; };
 		BB0000000000000000000005 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000005 /* Assets.xcassets */; };
 		BB0000000000000000000006 /* Goal.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000001 /* Goal.swift */; };
 		BB0000000000000000000007 /* GoalWheelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000002 /* GoalWheelView.swift */; };
@@ -56,6 +57,7 @@
 		AA000000000000000000000B /* GoalDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalDetailView.swift; sourceTree = "<group>"; };
 		AA000000000000000000000C /* LifeGoal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifeGoal.swift; sourceTree = "<group>"; };
 		AA000000000000000000000D /* LifeGoalDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifeGoalDetailView.swift; sourceTree = "<group>"; };
+		AA000000000000000000000E /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		AA0000000000000000000005 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		AA0000000000000000000006 /* EquilibriumWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EquilibriumWatchApp.swift; sourceTree = "<group>"; };
 		AA0000000000000000000007 /* WatchContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchContentView.swift; sourceTree = "<group>"; };
@@ -101,6 +103,7 @@
 				AA0000000000000000000004 /* ContentView.swift */,
 				AA000000000000000000000B /* GoalDetailView.swift */,
 				AA000000000000000000000D /* LifeGoalDetailView.swift */,
+				AA000000000000000000000E /* ProfileView.swift */,
 				AA0000000000000000000005 /* Assets.xcassets */,
 			);
 			path = Equilibrium;
@@ -232,6 +235,7 @@
 				BB0000000000000000000004 /* ContentView.swift in Sources */,
 				BB000000000000000000000C /* GoalDetailView.swift in Sources */,
 				BB000000000000000000000E /* LifeGoalDetailView.swift in Sources */,
+				BB0000000000000000000010 /* ProfileView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

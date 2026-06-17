@@ -18,6 +18,10 @@ struct ContentView: View {
     @State private var lifeGoals        = LifeGoal.demos
     @State private var activeIndex      = 0
     @State private var navigateToDetail = false
+    @State private var showProfile      = false
+
+    @AppStorage("profile_name")        private var profileName: String = ""
+    @AppStorage("profile_avatar_col")  private var profileColorIdx: Int = 0
 
     private var entries: [WheelEntry] {
         switch mode {
@@ -47,6 +51,13 @@ struct ContentView: View {
             .navigationDestination(isPresented: $navigateToDetail) {
                 detailDestination
             }
+        }
+        .sheet(isPresented: $showProfile) {
+            ProfileView(
+                balanceScore: goals.balanceScore,
+                dailyGoalCount: goals.count,
+                lifeGoalCount: lifeGoals.count
+            )
         }
         .onChange(of: mode) { _, _ in
             withAnimation(.spring(response: 0.4)) { activeIndex = 0 }
@@ -80,10 +91,40 @@ struct ContentView: View {
     // MARK: - Header
 
     private var appLabel: some View {
-        Text("equilibrium")
-            .font(.system(size: 13, weight: .medium, design: .monospaced))
-            .foregroundStyle(.white.opacity(0.28))
-            .padding(.top, 16)
+        HStack {
+            Text("equilibrium")
+                .font(.system(size: 13, weight: .medium, design: .monospaced))
+                .foregroundStyle(.white.opacity(0.28))
+
+            Spacer()
+
+            Button { showProfile = true } label: {
+                let col = ProfileView.palette[profileColorIdx]
+                ZStack {
+                    Circle()
+                        .fill(col.gradient)
+                        .frame(width: 32, height: 32)
+                        .shadow(color: col.opacity(0.4), radius: 8)
+                    if profileName.isEmpty {
+                        Image(systemName: "person.fill")
+                            .font(.system(size: 14, weight: .light))
+                            .foregroundStyle(.white.opacity(0.6))
+                    } else {
+                        let words = profileName.trimmingCharacters(in: .whitespaces).split(separator: " ")
+                        let ini: String = words.count > 1
+                            ? (String(words[0].prefix(1)) + String(words[1].prefix(1))).uppercased()
+                            : String(words.first?.prefix(2) ?? "").uppercased()
+                        Text(ini)
+                            .font(.system(size: 12, weight: .bold, design: .rounded))
+                            .foregroundStyle(.white)
+                    }
+                }
+            }
+            .buttonStyle(.plain)
+            .animation(.spring(response: 0.35), value: profileColorIdx)
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 16)
     }
 
     private var modeSwitcher: some View {
