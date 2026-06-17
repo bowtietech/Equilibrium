@@ -50,6 +50,7 @@ struct WatchGoalPage: View {
     var body: some View {
         GeometryReader { geo in
             ZStack {
+                // ── Background ──────────────────────────────────────────────
                 Color.appBg.ignoresSafeArea()
 
                 if let a = active {
@@ -63,57 +64,60 @@ struct WatchGoalPage: View {
                     .animation(.easeInOut(duration: 0.4), value: safeIndex)
                 }
 
-                VStack(spacing: 0) {
-                    Text(modeLabel)
-                        .font(.system(size: 8, weight: .semibold, design: .monospaced))
-                        .foregroundStyle(.primary.opacity(0.35))
-                        .padding(.top, 4)
+                // ── Wheel fills the whole canvas ─────────────────────────────
+                if entries.isEmpty {
+                    Image(systemName: emptyIcon)
+                        .font(.system(size: 36))
+                        .foregroundStyle(.primary.opacity(0.12))
+                } else {
+                    GoalWheelView(goals: entries, activeIndex: $activeIndex)
+                        .frame(width: geo.size.width, height: geo.size.height)
+                }
 
-                    if let a = active {
-                        HStack(spacing: 4) {
-                            Image(systemName: a.icon)
-                                .font(.system(size: 10, weight: .light))
-                                .foregroundStyle(a.color)
-                            Text(a.name)
-                                .font(.system(size: 13, weight: .bold, design: .rounded))
-                                .foregroundStyle(a.color)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.7)
+                // ── Labels overlaid at top and bottom ────────────────────────
+                VStack {
+                    // Mode chip + goal name at top
+                    VStack(spacing: 1) {
+                        Text(modeLabel)
+                            .font(.system(size: 7, weight: .semibold, design: .monospaced))
+                            .foregroundStyle(.primary.opacity(0.30))
+
+                        if let a = active {
+                            HStack(spacing: 3) {
+                                Image(systemName: a.icon)
+                                    .font(.system(size: 9, weight: .light))
+                                    .foregroundStyle(a.color)
+                                Text(a.name)
+                                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                                    .foregroundStyle(a.color)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.7)
+                            }
+                            .id("name-\(safeIndex)-\(modeLabel)")
+                            .transition(.opacity.combined(with: .scale(scale: 0.92)))
+                            .animation(.spring(response: 0.25, dampingFraction: 0.7), value: safeIndex)
+                        } else {
+                            Text("No \(modeLabel.lowercased()) goals")
+                                .font(.system(size: 11))
+                                .foregroundStyle(.primary.opacity(0.30))
                         }
-                        .id("name-\(safeIndex)-\(modeLabel)")
-                        .transition(.opacity.combined(with: .scale(scale: 0.92)))
-                        .animation(.spring(response: 0.25, dampingFraction: 0.7), value: safeIndex)
-                        .padding(.top, 2)
-                    } else {
-                        Text("No \(modeLabel.lowercased()) goals")
-                            .font(.system(size: 12))
-                            .foregroundStyle(.primary.opacity(0.35))
-                            .padding(.top, 2)
                     }
+                    .padding(.horizontal, 8)
+                    .padding(.top, 4)
 
-                    if entries.isEmpty {
-                        Spacer()
-                        Image(systemName: emptyIcon)
-                            .font(.system(size: 28))
-                            .foregroundStyle(.primary.opacity(0.15))
-                        Spacer()
-                    } else {
-                        GoalWheelView(goals: entries, activeIndex: $activeIndex)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .padding(.vertical, -4)
-                    }
+                    Spacer()
 
+                    // Percentage at bottom
                     if let a = active {
                         Text("\(Int(a.progress * 100))%")
                             .font(.system(size: 10, weight: .medium, design: .monospaced))
-                            .foregroundStyle(.primary.opacity(0.4))
+                            .foregroundStyle(.primary.opacity(0.38))
                             .id("pct-\(safeIndex)-\(modeLabel)")
                             .transition(.opacity)
                             .animation(.spring(response: 0.25), value: safeIndex)
-                            .padding(.bottom, 2)
+                            .padding(.bottom, 4)
                     }
                 }
-                .padding(.horizontal, 2)
             }
         }
         .onChange(of: entries.count) { _, count in
