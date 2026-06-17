@@ -323,6 +323,26 @@ struct ContentView: View {
         .animation(.spring(response: 0.3, dampingFraction: 0.72), value: activeIndex)
         .frame(height: 88)
         .padding(.bottom, 4)
+        .contentShape(Rectangle())
+        .gesture(
+            DragGesture(minimumDistance: 20)
+                .onEnded { value in
+                    guard entries.count > 1 else { return }
+                    let dx = value.translation.width
+                    guard abs(dx) > abs(value.translation.height) else { return }
+                    let feedback = UIImpactFeedbackGenerator(style: .light)
+                    feedback.impactOccurred()
+                    withAnimation(.spring(response: 0.32, dampingFraction: 0.72)) {
+                        if dx < 0 {
+                            // swipe left → next goal
+                            activeIndex = (activeIndex + 1) % entries.count
+                        } else {
+                            // swipe right → previous goal
+                            activeIndex = (activeIndex - 1 + entries.count) % entries.count
+                        }
+                    }
+                }
+        )
     }
 
     @ViewBuilder
