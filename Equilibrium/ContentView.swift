@@ -13,9 +13,9 @@ enum AppMode: String, CaseIterable {
 }
 
 struct ContentView: View {
+    @EnvironmentObject private var store: DataStore
+
     @State private var mode             = AppMode.daily
-    @State private var goals            = Goal.demos
-    @State private var lifeGoals        = LifeGoal.demos
     @State private var activeIndex      = 0
     @State private var navigateToDetail = false
     @State private var showProfile      = false
@@ -25,11 +25,17 @@ struct ContentView: View {
 
     private var entries: [WheelEntry] {
         switch mode {
-        case .daily: return goals.map(\.wheelEntry)
-        case .life:  return lifeGoals.map(\.wheelEntry)
+        case .daily: return store.goals.map(\.wheelEntry)
+        case .life:  return store.lifeGoals.map(\.wheelEntry)
         }
     }
-    private var active: WheelEntry { entries[activeIndex] }
+
+    private var active: WheelEntry {
+        guard !entries.isEmpty else {
+            return WheelEntry(id: UUID(), name: "", color: .white, icon: "circle", progress: 0)
+        }
+        return entries[min(activeIndex, entries.count - 1)]
+    }
 
     var body: some View {
         NavigationStack {
@@ -54,9 +60,9 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showProfile) {
             ProfileView(
-                balanceScore: goals.balanceScore,
-                dailyGoalCount: goals.count,
-                lifeGoalCount: lifeGoals.count
+                balanceScore: store.goals.balanceScore,
+                dailyGoalCount: store.goals.count,
+                lifeGoalCount: store.lifeGoals.count
             )
         }
         .onChange(of: mode) { _, _ in
@@ -68,9 +74,9 @@ struct ContentView: View {
     private var detailDestination: some View {
         switch mode {
         case .daily:
-            GoalDetailView(goal: $goals[activeIndex])
+            GoalDetailView(goal: $store.goals[activeIndex])
         case .life:
-            LifeGoalDetailView(goal: $lifeGoals[activeIndex])
+            LifeGoalDetailView(goal: $store.lifeGoals[activeIndex])
         }
     }
 
@@ -168,7 +174,7 @@ struct ContentView: View {
     }
 
     private var dailyScoreCard: some View {
-        let score = goals.balanceScore
+        let score = store.goals.balanceScore
         return HStack(spacing: 14) {
             ringView(progress: score, color: scoreColor(score))
                 .frame(width: 44, height: 44)
@@ -199,7 +205,7 @@ struct ContentView: View {
     }
 
     private var lifeProgressCard: some View {
-        let score = lifeGoals.map(\.progress).reduce(0, +) / max(1, Double(lifeGoals.count))
+        let score = store.lifeGoals.map(\.progress).reduce(0, +) / max(1, Double(store.lifeGoals.count))
         return HStack(spacing: 14) {
             ringView(progress: score, color: scoreColor(score))
                 .frame(width: 44, height: 44)
@@ -223,8 +229,8 @@ struct ContentView: View {
             Spacer()
 
             // Life goal type breakdown
-            let metricCount  = lifeGoals.filter { if case .metric  = $0.kind { return true }; return false }.count
-            let projectCount = lifeGoals.filter { if case .project = $0.kind { return true }; return false }.count
+            let metricCount  = store.lifeGoals.filter { if case .metric  = $0.kind { return true }; return false }.count
+            let projectCount = store.lifeGoals.filter { if case .project = $0.kind { return true }; return false }.count
             VStack(alignment: .trailing, spacing: 2) {
                 Text("\(metricCount) metric")
                 Text("\(projectCount) project")
@@ -266,7 +272,7 @@ struct ContentView: View {
     private var progressSubtitle: some View {
         switch mode {
         case .daily:
-            let g = goals[activeIndex]
+            let g = store.goals[min(activeIndex, store.goals.count - 1)]
             if let tp = g.todayProgress {
                 Text("\(Int(tp * 100))% today")
                     .font(.system(size: 14, design: .monospaced))
@@ -277,14 +283,14 @@ struct ContentView: View {
                     .foregroundStyle(.white.opacity(0.25))
             }
         case .life:
-            let lg = lifeGoals[activeIndex]
+            let lg = store.lifeGoals[min(activeIndex, store.lifeGoals.count - 1)]
             switch lg.kind {
             case .metric(let m):
                 Text("\(m.currentLabel) → \(m.targetLabel)")
                     .font(.system(size: 14, design: .monospaced))
                     .foregroundStyle(.white.opacity(0.45))
             case .project(let sgs):
-                let done  = sgs.filter { $0.progress >= 1.0 }.count
+                let done = sgs.filter { $0.progress >= 1.0 }.count
                 Text("\(done)/\(sgs.count) areas complete")
                     .font(.system(size: 14, design: .monospaced))
                     .foregroundStyle(.white.opacity(0.45))

@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 60;
+	objectVersion = 56;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -11,11 +11,6 @@
 		BB0000000000000000000002 /* GoalWheelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000002 /* GoalWheelView.swift */; };
 		BB0000000000000000000003 /* EquilibriumApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000003 /* EquilibriumApp.swift */; };
 		BB0000000000000000000004 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000004 /* ContentView.swift */; };
-		BB000000000000000000000C /* GoalDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000000B /* GoalDetailView.swift */; };
-		BB000000000000000000000D /* LifeGoal.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000000C /* LifeGoal.swift */; };
-		BB000000000000000000000E /* LifeGoalDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000000D /* LifeGoalDetailView.swift */; };
-		BB000000000000000000000F /* LifeGoal.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000000C /* LifeGoal.swift */; };
-		BB0000000000000000000010 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000000E /* ProfileView.swift */; };
 		BB0000000000000000000005 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000005 /* Assets.xcassets */; };
 		BB0000000000000000000006 /* Goal.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000001 /* Goal.swift */; };
 		BB0000000000000000000007 /* GoalWheelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000002 /* GoalWheelView.swift */; };
@@ -23,6 +18,12 @@
 		BB0000000000000000000009 /* WatchContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000007 /* WatchContentView.swift */; };
 		BB000000000000000000000A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000008 /* Assets.xcassets */; };
 		BB000000000000000000000B /* Equilibrium Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = AA000000000000000000000A /* Equilibrium Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		BB000000000000000000000C /* GoalDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000000B /* GoalDetailView.swift */; };
+		BB000000000000000000000D /* LifeGoal.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000000C /* LifeGoal.swift */; };
+		BB000000000000000000000E /* LifeGoalDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000000D /* LifeGoalDetailView.swift */; };
+		BB000000000000000000000F /* LifeGoal.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000000C /* LifeGoal.swift */; };
+		BB0000000000000000000010 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000000E /* ProfileView.swift */; };
+		BB0000000000000000000011 /* DataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000000F /* DataStore.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -50,20 +51,21 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		AA0000000000000000000001 /* Goal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Goal.swift"; sourceTree = "<group>"; };
+		AA0000000000000000000001 /* Goal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Goal.swift; sourceTree = "<group>"; };
 		AA0000000000000000000002 /* GoalWheelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalWheelView.swift; sourceTree = "<group>"; };
 		AA0000000000000000000003 /* EquilibriumApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EquilibriumApp.swift; sourceTree = "<group>"; };
 		AA0000000000000000000004 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		AA000000000000000000000B /* GoalDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalDetailView.swift; sourceTree = "<group>"; };
-		AA000000000000000000000C /* LifeGoal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifeGoal.swift; sourceTree = "<group>"; };
-		AA000000000000000000000D /* LifeGoalDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifeGoalDetailView.swift; sourceTree = "<group>"; };
-		AA000000000000000000000E /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		AA0000000000000000000005 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		AA0000000000000000000006 /* EquilibriumWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EquilibriumWatchApp.swift; sourceTree = "<group>"; };
 		AA0000000000000000000007 /* WatchContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchContentView.swift; sourceTree = "<group>"; };
 		AA0000000000000000000008 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		AA0000000000000000000009 /* Equilibrium.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Equilibrium.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA000000000000000000000A /* Equilibrium Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Equilibrium Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA000000000000000000000B /* GoalDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalDetailView.swift; sourceTree = "<group>"; };
+		AA000000000000000000000C /* LifeGoal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifeGoal.swift; sourceTree = "<group>"; };
+		AA000000000000000000000D /* LifeGoalDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifeGoalDetailView.swift; sourceTree = "<group>"; };
+		AA000000000000000000000E /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
+		AA000000000000000000000F /* DataStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataStore.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -104,6 +106,7 @@
 				AA000000000000000000000B /* GoalDetailView.swift */,
 				AA000000000000000000000D /* LifeGoalDetailView.swift */,
 				AA000000000000000000000E /* ProfileView.swift */,
+				AA000000000000000000000F /* DataStore.swift */,
 				AA0000000000000000000005 /* Assets.xcassets */,
 			);
 			path = Equilibrium;
@@ -236,6 +239,7 @@
 				BB000000000000000000000C /* GoalDetailView.swift in Sources */,
 				BB000000000000000000000E /* LifeGoalDetailView.swift in Sources */,
 				BB0000000000000000000010 /* ProfileView.swift in Sources */,
+				BB0000000000000000000011 /* DataStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -381,13 +385,15 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = T9UHHTM85B;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.equilibrium.app";
+				PRODUCT_BUNDLE_IDENTIFIER = com.bowtie.equilibrium;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -405,13 +411,15 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = T9UHHTM85B;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.equilibrium.app";
+				PRODUCT_BUNDLE_IDENTIFIER = com.bowtie.equilibrium;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -429,12 +437,13 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = T9UHHTM85B;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = "com.equilibrium.app";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.bowtie.equilibrium;
 				INFOPLIST_KEY_WKWatchOnly = NO;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.equilibrium.app.watchkitapp";
+				PRODUCT_BUNDLE_IDENTIFIER = com.bowtie.equilibrium.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
@@ -452,12 +461,13 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = T9UHHTM85B;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = "com.equilibrium.app";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.bowtie.equilibrium;
 				INFOPLIST_KEY_WKWatchOnly = NO;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.equilibrium.app.watchkitapp";
+				PRODUCT_BUNDLE_IDENTIFIER = com.bowtie.equilibrium.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
@@ -499,7 +509,6 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
-
 	};
 	rootObject = PP0000000000000000000001 /* Project object */;
 }
