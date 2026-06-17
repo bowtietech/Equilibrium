@@ -23,6 +23,7 @@ struct ContentView: View {
     @State private var navigateToDetail = false
     @State private var showProfile      = false
     @State private var showHealthImport = false
+    @State private var showAddGoal      = false
 
     @AppStorage("profile_name")        private var profileName: String = ""
     @AppStorage("profile_avatar_col")  private var profileColorIdx: Int = 0
@@ -76,6 +77,9 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showHealthImport) {
             HealthImportView()
+        }
+        .sheet(isPresented: $showAddGoal) {
+            AddGoalSheet(mode: mode)
         }
         .onChange(of: mode) { _, newMode in
             let count = newMode == .daily ? store.goals.count : store.lifeGoals.count
@@ -131,30 +135,41 @@ struct ContentView: View {
 
             Spacer()
 
-            Button { showProfile = true } label: {
-                let col = ProfileView.palette[profileColorIdx]
-                ZStack {
-                    Circle()
-                        .fill(col.gradient)
+            HStack(spacing: 10) {
+                Button { showAddGoal = true } label: {
+                    Image(systemName: "plus")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.75))
                         .frame(width: 32, height: 32)
-                        .shadow(color: col.opacity(0.4), radius: 8)
-                    if profileName.isEmpty {
-                        Image(systemName: "person.fill")
-                            .font(.system(size: 14, weight: .light))
-                            .foregroundStyle(.white.opacity(0.6))
-                    } else {
-                        let words = profileName.trimmingCharacters(in: .whitespaces).split(separator: " ")
-                        let ini: String = words.count > 1
-                            ? (String(words[0].prefix(1)) + String(words[1].prefix(1))).uppercased()
-                            : String(words.first?.prefix(2) ?? "").uppercased()
-                        Text(ini)
-                            .font(.system(size: 12, weight: .bold, design: .rounded))
-                            .foregroundStyle(.white)
+                        .background(.white.opacity(0.09), in: Circle())
+                }
+                .buttonStyle(.plain)
+
+                Button { showProfile = true } label: {
+                    let col = ProfileView.palette[profileColorIdx]
+                    ZStack {
+                        Circle()
+                            .fill(col.gradient)
+                            .frame(width: 32, height: 32)
+                            .shadow(color: col.opacity(0.4), radius: 8)
+                        if profileName.isEmpty {
+                            Image(systemName: "person.fill")
+                                .font(.system(size: 14, weight: .light))
+                                .foregroundStyle(.white.opacity(0.6))
+                        } else {
+                            let words = profileName.trimmingCharacters(in: .whitespaces).split(separator: " ")
+                            let ini: String = words.count > 1
+                                ? (String(words[0].prefix(1)) + String(words[1].prefix(1))).uppercased()
+                                : String(words.first?.prefix(2) ?? "").uppercased()
+                            Text(ini)
+                                .font(.system(size: 12, weight: .bold, design: .rounded))
+                                .foregroundStyle(.white)
+                        }
                     }
                 }
+                .buttonStyle(.plain)
+                .animation(.spring(response: 0.35), value: profileColorIdx)
             }
-            .buttonStyle(.plain)
-            .animation(.spring(response: 0.35), value: profileColorIdx)
         }
         .padding(.horizontal, 20)
         .padding(.top, 16)

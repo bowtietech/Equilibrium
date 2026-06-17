@@ -32,6 +32,7 @@
 		BB0000000000000000000017 /* HealthKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000016 /* HealthKitManager.swift */; };
 		BB0000000000000000000018 /* HealthImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000017 /* HealthImportView.swift */; };
 		BB0000000000000000000019 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000018 /* OnboardingView.swift */; };
+		BB000000000000000000001A /* AddGoalSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000019 /* AddGoalSheet.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -84,6 +85,7 @@
 		AA0000000000000000000016 /* HealthKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitManager.swift; sourceTree = "<group>"; };
 		AA0000000000000000000017 /* HealthImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthImportView.swift; sourceTree = "<group>"; };
 		AA0000000000000000000018 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		AA0000000000000000000019 /* AddGoalSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddGoalSheet.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -143,8 +145,9 @@
 				AA0000000000000000000014 /* Equilibrium.entitlements */,
 				AA0000000000000000000016 /* HealthKitManager.swift */,
 				AA0000000000000000000017 /* HealthImportView.swift */,
-				AA0000000000000000000018 /* OnboardingView.swift */,
-				AA0000000000000000000005 /* Assets.xcassets */,
+			AA0000000000000000000018 /* OnboardingView.swift */,
+			AA0000000000000000000019 /* AddGoalSheet.swift */,
+			AA0000000000000000000005 /* Assets.xcassets */,
 			);
 			path = Equilibrium;
 			sourceTree = "<group>";
@@ -290,6 +293,7 @@
 				BB0000000000000000000017 /* HealthKitManager.swift in Sources */,
 				BB0000000000000000000018 /* HealthImportView.swift in Sources */,
 				BB0000000000000000000019 /* OnboardingView.swift in Sources */,
+			BB000000000000000000001A /* AddGoalSheet.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
