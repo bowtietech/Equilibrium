@@ -86,6 +86,7 @@ struct GoalWheelView: View {
             return
         }
 
+        guard !goals.isEmpty else { return }
         guard dist < radius * 1.45 else { return }
 
         let tapAngle = atan2(Double(dy), Double(dx))
@@ -120,6 +121,7 @@ struct GoalWheelView: View {
     // MARK: - Drawing
 
     private func drawWheel(ctx: GraphicsContext, center: CGPoint, radius: CGFloat) {
+        guard !goals.isEmpty else { return }
         let step = 2.0 * Double.pi / Double(goals.count)
 
         // ── Static reference rings ──────────────────────────────────────────
@@ -241,6 +243,7 @@ struct GoalWheelView: View {
     // MARK: - Rotation Logic
 
     private func nearestGoal(rotation: Double) -> Int {
+        guard !goals.isEmpty else { return 0 }
         let step = 2.0 * Double.pi / Double(goals.count)
         var minDiff = Double.infinity
         var idx = 0
@@ -254,6 +257,7 @@ struct GoalWheelView: View {
     }
 
     private func snap() {
+        guard !goals.isEmpty else { return }
         let step = 2.0 * Double.pi / Double(goals.count)
         var adj = (Double(activeIndex) * step + rotation).truncatingRemainder(dividingBy: 2 * .pi)
         if adj >  .pi { adj -= 2 * .pi }
