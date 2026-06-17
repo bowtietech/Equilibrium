@@ -14,7 +14,8 @@ struct HealthMetricTemplate: Identifiable {
     let queryKind: QueryKind
 
     enum QueryKind {
-        case quantitySum(HKQuantityTypeIdentifier, HKUnit)
+        case quantitySum(HKQuantityTypeIdentifier, HKUnit)       // cumulative types (steps, calories…)
+        case quantityAverage(HKQuantityTypeIdentifier, HKUnit)   // discrete types (heart rate…)
         case sleep          // HKCategoryTypeIdentifier.sleepAnalysis → hours
         case mindful        // HKCategoryTypeIdentifier.mindfulSession → minutes
     }
@@ -85,14 +86,14 @@ struct HealthMetricTemplate: Identifiable {
         ),
         // Body
         HealthMetricTemplate(
-            id:            HKQuantityTypeIdentifier.heartRate.rawValue,
+            id:            HKQuantityTypeIdentifier.restingHeartRate.rawValue,
             name:          "Resting Heart Rate",
             icon:          "heart.fill",
             colorData:     .rose,
             defaultTarget: 60,
             unitLabel:     "bpm",
             category:      "Body",
-            queryKind:     .quantitySum(.restingHeartRate, .count().unitDivided(by: .minute()))
+            queryKind:     .quantityAverage(.restingHeartRate, .count().unitDivided(by: .minute()))
         ),
     ]
 
@@ -121,7 +122,7 @@ final class HealthKitManager: ObservableObject {
         var readTypes = Set<HKObjectType>()
         for t in HealthMetricTemplate.all {
             switch t.queryKind {
-            case .quantitySum(let id, _):
+            case .quantitySum(let id, _), .quantityAverage(let id, _):
                 if let qt = HKQuantityType.quantityType(forIdentifier: id) { readTypes.insert(qt) }
             case .sleep:
                 if let ct = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) { readTypes.insert(ct) }
@@ -162,6 +163,8 @@ final class HealthKitManager: ObservableObject {
         switch template.queryKind {
         case .quantitySum(let id, let unit):
             return await sumToday(identifier: id, unit: unit)
+        case .quantityAverage(let id, let unit):
+            return await averageToday(identifier: id, unit: unit)
         case .sleep:
             return await sleepHoursLastNight()
         case .mindful:
@@ -170,6 +173,23 @@ final class HealthKitManager: ObservableObject {
     }
 
     // MARK: - Query helpers
+
+    private func averageToday(identifier: HKQuantityTypeIdentifier, unit: HKUnit) async -> Double {
+        guard let type = HKQuantityType.quantityType(forIdentifier: identifier) else { return 0 }
+        let start = Calendar.current.startOfDay(for: Date())
+        let predicate = HKQuery.predicateForSamples(withStart: start, end: Date())
+
+        return await withCheckedContinuation { continuation in
+            let query = HKStatisticsQuery(
+                quantityType: type,
+                quantitySamplePredicate: predicate,
+                options: .discreteAverage
+            ) { _, result, _ in
+                continuation.resume(returning: result?.averageQuantity()?.doubleValue(for: unit) ?? 0)
+            }
+            store.execute(query)
+        }
+    }
 
     private func sumToday(identifier: HKQuantityTypeIdentifier, unit: HKUnit) async -> Double {
         guard let type = HKQuantityType.quantityType(forIdentifier: identifier) else { return 0 }
