@@ -78,7 +78,15 @@ struct GoalWheelView: View {
         let dist = hypot(dx, dy)
 
         let hubR = min(radius * 0.065, 9.0)
-        guard dist > hubR * 3 && dist < radius * 1.45 else { return }
+        let centerZone = max(hubR * 4, 28.0)
+
+        // Tap on the center hub → open the active goal
+        if dist < centerZone {
+            onActiveTap()
+            return
+        }
+
+        guard dist < radius * 1.45 else { return }
 
         let tapAngle = atan2(Double(dy), Double(dx))
         let step = 2.0 * Double.pi / Double(goals.count)
@@ -167,13 +175,18 @@ struct GoalWheelView: View {
             }
         }
 
-        // Center hub
-        let hubR: CGFloat = min(radius * 0.065, 9)
+        // Center hub — tinted with active goal color, hinting it's tappable
+        let hubR: CGFloat = min(radius * 0.075, 11)
         let hubRect = CGRect(x: center.x - hubR, y: center.y - hubR, width: hubR * 2, height: hubR * 2)
+        let activeColor = goals[activeIndex].color
         ctx.drawLayer { layer in
-            layer.addFilter(.shadow(color: .white, radius: 6, x: 0, y: 0))
-            layer.fill(Path(ellipseIn: hubRect), with: .color(.white))
+            layer.addFilter(.shadow(color: activeColor, radius: 10, x: 0, y: 0))
+            layer.fill(Path(ellipseIn: hubRect), with: .color(activeColor.opacity(0.85)))
         }
+        // White core dot
+        let coreR: CGFloat = hubR * 0.4
+        let coreRect = CGRect(x: center.x - coreR, y: center.y - coreR, width: coreR * 2, height: coreR * 2)
+        ctx.fill(Path(ellipseIn: coreRect), with: .color(.white.opacity(0.9)))
 
         // Top indicator pip
         let pipR: CGFloat = max(2.5, radius * 0.022)
