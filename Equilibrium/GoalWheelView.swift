@@ -129,8 +129,7 @@ struct GoalWheelView: View {
         let safeActive = min(activeIndex, goals.count - 1)
         let step = 2.0 * Double.pi / Double(goals.count)
 
-        // ── Static reference rings ──────────────────────────────────────────
-        drawRing(ctx: ctx, center: center, radius: radius,        opacity: 0.10)
+        // ── Static reference rings (inner guides only — no outer ring) ────────
         drawRing(ctx: ctx, center: center, radius: radius * 0.5,  opacity: 0.05)
         drawRing(ctx: ctx, center: center, radius: radius * 0.25, opacity: 0.04)
 
@@ -226,12 +225,22 @@ struct GoalWheelView: View {
         let coreDot: Color = colorScheme == .dark ? .white.opacity(0.9) : Color.primary.opacity(0.9)
         ctx.fill(Path(ellipseIn: coreRect), with: .color(coreDot))
 
-        // Top indicator pip
-        let pipR: CGFloat = max(2.5, radius * 0.022)
-        let pipY  = center.y - radius - pipR * 2.5
-        let pipRect = CGRect(x: center.x - pipR, y: pipY - pipR, width: pipR * 2, height: pipR * 2)
-        let pipColor: Color = colorScheme == .dark ? .white.opacity(0.35) : Color.primary.opacity(0.35)
-        ctx.fill(Path(ellipseIn: pipRect), with: .color(pipColor))
+        // Top indicator — downward-pointing triangle in the active goal's color
+        let triHW: CGFloat = max(5.5, radius * 0.048)   // half-width of base
+        let triH:  CGFloat = max(6.5, radius * 0.056)   // height (tip to base)
+        let triTipY = center.y - radius + triH * 0.5 - 2  // tip sits just inside the wheel boundary
+        let triTopY = triTipY - triH                       // flat base above the tip
+
+        var tri = Path()
+        tri.move(to: CGPoint(x: center.x,        y: triTipY))          // bottom apex (points down)
+        tri.addLine(to: CGPoint(x: center.x - triHW, y: triTopY))      // top-left
+        tri.addLine(to: CGPoint(x: center.x + triHW, y: triTopY))      // top-right
+        tri.closeSubpath()
+
+        ctx.drawLayer { layer in
+            layer.addFilter(.shadow(color: activeColor, radius: 6, x: 0, y: 0))
+            layer.fill(tri, with: .color(activeColor))
+        }
     }
 
     private func drawRing(ctx: GraphicsContext, center: CGPoint, radius: CGFloat, opacity: Double) {
