@@ -15,6 +15,9 @@ struct HealthMetricTemplate: Identifiable {
     /// When true the goal is to get the value DOWN to the target (e.g. resting HR).
     /// Progress = min(target / value, 1.0) so being at or below target = 100%.
     let isLowerBetter: Bool
+    /// Multiply the raw HK value by this before comparing to target.
+    /// Use 100.0 for percent-based metrics so they express as 0–100, not 0–1.
+    var valueScale: Double = 1.0
 
     enum QueryKind {
         case quantitySum(HKQuantityTypeIdentifier, HKUnit)       // cumulative types (steps, calories…)
@@ -105,6 +108,110 @@ struct HealthMetricTemplate: Identifiable {
             queryKind:     .quantityAverage(.restingHeartRate, .count().unitDivided(by: .minute())),
             isLowerBetter: true
         ),
+        HealthMetricTemplate(
+            id:            HKQuantityTypeIdentifier.bodyMass.rawValue,
+            name:          "Body Weight",
+            icon:          "scalemass.fill",
+            colorData:     .blue,
+            defaultTarget: 70,
+            unitLabel:     "kg",
+            category:      "Body",
+            queryKind:     .quantityAverage(.bodyMass, .gramUnit(with: .kilo)),
+            isLowerBetter: true
+        ),
+        HealthMetricTemplate(
+            id:            HKQuantityTypeIdentifier.bodyFatPercentage.rawValue,
+            name:          "Body Fat",
+            icon:          "figure.arms.open",
+            colorData:     .amber,
+            defaultTarget: 20,        // user enters 20 meaning 20%
+            unitLabel:     "%",
+            category:      "Body",
+            queryKind:     .quantityAverage(.bodyFatPercentage, .percent()),
+            isLowerBetter: true,
+            valueScale:    100        // HK returns 0–1; multiply to get 0–100
+        ),
+        HealthMetricTemplate(
+            id:            HKQuantityTypeIdentifier.bodyMassIndex.rawValue,
+            name:          "BMI",
+            icon:          "person.fill",
+            colorData:     .violet,
+            defaultTarget: 22,
+            unitLabel:     "",
+            category:      "Body",
+            queryKind:     .quantityAverage(.bodyMassIndex, .count()),
+            isLowerBetter: true
+        ),
+        HealthMetricTemplate(
+            id:            HKQuantityTypeIdentifier.heartRateVariabilitySDNN.rawValue,
+            name:          "Heart Rate Variability",
+            icon:          "waveform.path.ecg",
+            colorData:     .pink,
+            defaultTarget: 50,
+            unitLabel:     "ms",
+            category:      "Body",
+            queryKind:     .quantityAverage(.heartRateVariabilitySDNN,
+                                            .secondUnit(with: .milli)),
+            isLowerBetter: false
+        ),
+        HealthMetricTemplate(
+            id:            HKQuantityTypeIdentifier.oxygenSaturation.rawValue,
+            name:          "Blood Oxygen",
+            icon:          "lungs.fill",
+            colorData:     .cyan,
+            defaultTarget: 98,        // user enters 98 meaning 98%
+            unitLabel:     "%",
+            category:      "Body",
+            queryKind:     .quantityAverage(.oxygenSaturation, .percent()),
+            isLowerBetter: false,
+            valueScale:    100
+        ),
+        // Activity
+        HealthMetricTemplate(
+            id:            HKQuantityTypeIdentifier.flightsClimbed.rawValue,
+            name:          "Flights Climbed",
+            icon:          "figure.stairs",
+            colorData:     .teal,
+            defaultTarget: 10,
+            unitLabel:     "flights",
+            category:      "Fitness",
+            queryKind:     .quantitySum(.flightsClimbed, .count()),
+            isLowerBetter: false
+        ),
+        HealthMetricTemplate(
+            id:            HKQuantityTypeIdentifier.basalEnergyBurned.rawValue,
+            name:          "Resting Calories",
+            icon:          "flame",
+            colorData:     .gold,
+            defaultTarget: 1800,
+            unitLabel:     "kcal",
+            category:      "Fitness",
+            queryKind:     .quantitySum(.basalEnergyBurned, .kilocalorie()),
+            isLowerBetter: false
+        ),
+        // Nutrition
+        HealthMetricTemplate(
+            id:            HKQuantityTypeIdentifier.dietaryWater.rawValue,
+            name:          "Water",
+            icon:          "drop.fill",
+            colorData:     .blue,
+            defaultTarget: 2.5,
+            unitLabel:     "L",
+            category:      "Nutrition",
+            queryKind:     .quantitySum(.dietaryWater, .literUnit(with: .none)),
+            isLowerBetter: false
+        ),
+        HealthMetricTemplate(
+            id:            HKQuantityTypeIdentifier.dietaryEnergyConsumed.rawValue,
+            name:          "Calories Consumed",
+            icon:          "fork.knife",
+            colorData:     .green,
+            defaultTarget: 2000,
+            unitLabel:     "kcal",
+            category:      "Nutrition",
+            queryKind:     .quantitySum(.dietaryEnergyConsumed, .kilocalorie()),
+            isLowerBetter: false
+        ),
     ]
 
     static func find(identifier: String) -> HealthMetricTemplate? {
@@ -149,6 +256,15 @@ final class HealthKitManager: ObservableObject {
         }
     }
 
+    // MARK: - Re-authorize + refresh (called from settings)
+
+    /// Re-requests authorization for all known templates (picks up newly added metric types
+    /// or third-party sources like smart scales) then refreshes goal progress.
+    func syncAll(goals: [Goal]) async {
+        await requestAuthorization()
+        await refresh(goals: goals)
+    }
+
     // MARK: - Refresh goal progress
 
     func refresh(goals: [Goal]) async {
@@ -178,16 +294,18 @@ final class HealthKitManager: ObservableObject {
 
     func todayValue(for template: HealthMetricTemplate) async -> Double {
         guard isAvailable else { return 0 }
+        let raw: Double
         switch template.queryKind {
         case .quantitySum(let id, let unit):
-            return await sumToday(identifier: id, unit: unit)
+            raw = await sumToday(identifier: id, unit: unit)
         case .quantityAverage(let id, let unit):
-            return await averageToday(identifier: id, unit: unit)
+            raw = await averageToday(identifier: id, unit: unit)
         case .sleep:
-            return await sleepHoursLastNight()
+            raw = await sleepHoursLastNight()
         case .mindful:
-            return await mindfulMinutesToday()
+            raw = await mindfulMinutesToday()
         }
+        return raw * template.valueScale
     }
 
     // MARK: - Query helpers

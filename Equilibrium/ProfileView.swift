@@ -62,6 +62,8 @@ struct ProfileView: View {
     @EnvironmentObject private var store:  DataStore
     @State private var showSignOutConfirm  = false
     @State private var showResetConfirm    = false
+    @State private var syncingHealth       = false
+    @State private var syncDone            = false
 
     // Persisted profile fields
     @AppStorage(PK.name)         private var name: String  = ""
@@ -447,6 +449,7 @@ struct ProfileView: View {
 
     private var healthSection: some View {
         Section {
+            // Open health import / manage
             Button {
                 dismiss()
                 showHealthImport = true
@@ -469,6 +472,38 @@ struct ProfileView: View {
                 }
             }
             .buttonStyle(.plain)
+
+            // Re-authorize + sync new metric types (e.g. from third-party scales / apps)
+            Button {
+                guard !syncingHealth else { return }
+                syncingHealth = true
+                syncDone      = false
+                Task {
+                    await health.syncAll(goals: store.goals)
+                    syncingHealth = false
+                    withAnimation { syncDone = true }
+                    try? await Task.sleep(for: .seconds(2))
+                    withAnimation { syncDone = false }
+                }
+            } label: {
+                profileRow(icon: "arrow.triangle.2.circlepath", label: "Update from Health") {
+                    if syncingHealth {
+                        ProgressView()
+                            .scaleEffect(0.75)
+                            .tint(.white.opacity(0.4))
+                    } else if syncDone {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 14))
+                            .foregroundStyle(.green.opacity(0.8))
+                    } else {
+                        Text("Sync now")
+                            .font(.system(size: 13))
+                            .foregroundStyle(accent.opacity(0.85))
+                    }
+                }
+            }
+            .buttonStyle(.plain)
+            .disabled(syncingHealth)
         } header: { sectionHeader("Health") }
         .listRowBackground(rowBG)
         .listRowSeparatorTint(.white.opacity(0.08))
