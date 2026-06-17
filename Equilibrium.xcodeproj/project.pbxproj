@@ -24,6 +24,10 @@
 		BB000000000000000000000F /* LifeGoal.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000000C /* LifeGoal.swift */; };
 		BB0000000000000000000010 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000000E /* ProfileView.swift */; };
 		BB0000000000000000000011 /* DataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000000F /* DataStore.swift */; };
+		BB0000000000000000000012 /* SupabaseClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000010 /* SupabaseClient.swift */; };
+		BB0000000000000000000013 /* AuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000011 /* AuthManager.swift */; };
+		BB0000000000000000000014 /* AuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000012 /* AuthView.swift */; };
+		BB0000000000000000000015 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = SS0000000000000000000002 /* Supabase */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -66,6 +70,9 @@
 		AA000000000000000000000D /* LifeGoalDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifeGoalDetailView.swift; sourceTree = "<group>"; };
 		AA000000000000000000000E /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		AA000000000000000000000F /* DataStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataStore.swift; sourceTree = "<group>"; };
+		AA0000000000000000000010 /* SupabaseClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseClient.swift; sourceTree = "<group>"; };
+		AA0000000000000000000011 /* AuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthManager.swift; sourceTree = "<group>"; };
+		AA0000000000000000000012 /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -73,6 +80,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BB0000000000000000000015 /* Supabase in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -107,6 +115,9 @@
 				AA000000000000000000000D /* LifeGoalDetailView.swift */,
 				AA000000000000000000000E /* ProfileView.swift */,
 				AA000000000000000000000F /* DataStore.swift */,
+				AA0000000000000000000010 /* SupabaseClient.swift */,
+				AA0000000000000000000011 /* AuthManager.swift */,
+				AA0000000000000000000012 /* AuthView.swift */,
 				AA0000000000000000000005 /* Assets.xcassets */,
 			);
 			path = Equilibrium;
@@ -149,6 +160,9 @@
 				HH0000000000000000000002 /* PBXTargetDependency */,
 			);
 			name = Equilibrium;
+			packageProductDependencies = (
+				SS0000000000000000000002 /* Supabase */,
+			);
 			productName = Equilibrium;
 			productReference = AA0000000000000000000009 /* Equilibrium.app */;
 			productType = "com.apple.product-type.application";
@@ -200,12 +214,34 @@
 			productRefGroup = DD0000000000000000000004 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
+			packageReferences = (
+				SS0000000000000000000001 /* XCRemoteSwiftPackageReference "supabase-swift" */,
+			);
 			targets = (
 				EE0000000000000000000001 /* Equilibrium */,
 				EE0000000000000000000002 /* Equilibrium Watch App */,
 			);
 		};
 /* End PBXProject section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		SS0000000000000000000001 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/supabase/supabase-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = "2.0.0";
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		SS0000000000000000000002 /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = SS0000000000000000000001 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
+		};
+/* End XCSwiftPackageProductDependency section */
 
 /* Begin PBXResourcesBuildPhase section */
 		CC0000000000000000000003 /* Resources */ = {
@@ -240,6 +276,9 @@
 				BB000000000000000000000E /* LifeGoalDetailView.swift in Sources */,
 				BB0000000000000000000010 /* ProfileView.swift in Sources */,
 				BB0000000000000000000011 /* DataStore.swift in Sources */,
+				BB0000000000000000000012 /* SupabaseClient.swift in Sources */,
+				BB0000000000000000000013 /* AuthManager.swift in Sources */,
+				BB0000000000000000000014 /* AuthView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

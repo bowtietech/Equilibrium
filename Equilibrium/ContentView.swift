@@ -357,4 +357,6 @@ private extension View {
 
 #Preview {
     ContentView()
+        .environmentObject(DataStore())
+        .environmentObject(AuthManager())
 }

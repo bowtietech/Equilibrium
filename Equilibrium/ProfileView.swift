@@ -23,6 +23,9 @@ struct ProfileView: View {
     let dailyGoalCount: Int
     let lifeGoalCount: Int
 
+    @EnvironmentObject private var auth: AuthManager
+    @State private var showSignOutConfirm = false
+
     // Persisted profile fields
     @AppStorage(PK.name)         private var name: String  = ""
     @AppStorage(PK.tagline)      private var tagline: String = ""
@@ -105,6 +108,7 @@ struct ProfileView: View {
                     personalSection
                     preferencesSection
                     aboutSection
+                    accountSection
                 }
                 .listStyle(.plain)
                 .scrollContentBackground(.hidden)
@@ -371,6 +375,46 @@ struct ProfileView: View {
         .listRowSeparatorTint(.white.opacity(0.08))
     }
 
+    // MARK: - Account section
+
+    private var accountSection: some View {
+        Section {
+            if let email = auth.userEmail {
+                profileRow(icon: "envelope.badge.shield.half.filled", label: "Account") {
+                    Text(email)
+                        .font(.system(size: 12, design: .monospaced))
+                        .foregroundStyle(.white.opacity(0.4))
+                        .lineLimit(1)
+                }
+            }
+
+            Button {
+                showSignOutConfirm = true
+            } label: {
+                HStack {
+                    Label {
+                        Text("Sign Out")
+                            .foregroundStyle(.red.opacity(0.85))
+                    } icon: {
+                        Image(systemName: "rectangle.portrait.and.arrow.right")
+                            .foregroundStyle(.red.opacity(0.7))
+                            .frame(width: 20)
+                    }
+                    Spacer()
+                }
+            }
+            .buttonStyle(.plain)
+        } header: { sectionHeader("Account") }
+        .listRowBackground(rowBG)
+        .listRowSeparatorTint(.white.opacity(0.08))
+        .confirmationDialog("Sign out of Equilibrium?", isPresented: $showSignOutConfirm, titleVisibility: .visible) {
+            Button("Sign Out", role: .destructive) {
+                Task { try? await auth.signOut() }
+            }
+            Button("Cancel", role: .cancel) {}
+        }
+    }
+
     // MARK: - Layout helpers
 
     private var rowBG: some View {
@@ -422,4 +466,5 @@ private extension Text {
 
 #Preview {
     ProfileView(balanceScore: 0.73, dailyGoalCount: 6, lifeGoalCount: 6)
+        .environmentObject(AuthManager())
 }
