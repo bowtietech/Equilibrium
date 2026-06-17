@@ -74,14 +74,11 @@ struct WatchGoalPage: View {
                         .frame(width: geo.size.width, height: geo.size.height)
                 }
 
-                // ── Labels overlaid at top and bottom ────────────────────────
+                // ── Label pinned to the very bottom ─────────────────────────
                 VStack {
-                    // Mode chip + goal name at top
-                    VStack(spacing: 1) {
-                        Text(modeLabel)
-                            .font(.system(size: 7, weight: .semibold, design: .monospaced))
-                            .foregroundStyle(.primary.opacity(0.30))
+                    Spacer()
 
+                    VStack(spacing: 2) {
                         if let a = active {
                             HStack(spacing: 3) {
                                 Image(systemName: a.icon)
@@ -96,6 +93,13 @@ struct WatchGoalPage: View {
                             .id("name-\(safeIndex)-\(modeLabel)")
                             .transition(.opacity.combined(with: .scale(scale: 0.92)))
                             .animation(.spring(response: 0.25, dampingFraction: 0.7), value: safeIndex)
+
+                            Text("\(Int(a.progress * 100))%")
+                                .font(.system(size: 10, weight: .medium, design: .monospaced))
+                                .foregroundStyle(.primary.opacity(0.38))
+                                .id("pct-\(safeIndex)-\(modeLabel)")
+                                .transition(.opacity)
+                                .animation(.spring(response: 0.25), value: safeIndex)
                         } else {
                             Text("No \(modeLabel.lowercased()) goals")
                                 .font(.system(size: 11))
@@ -103,20 +107,7 @@ struct WatchGoalPage: View {
                         }
                     }
                     .padding(.horizontal, 8)
-                    .padding(.top, 4)
-
-                    Spacer()
-
-                    // Percentage at bottom
-                    if let a = active {
-                        Text("\(Int(a.progress * 100))%")
-                            .font(.system(size: 10, weight: .medium, design: .monospaced))
-                            .foregroundStyle(.primary.opacity(0.38))
-                            .id("pct-\(safeIndex)-\(modeLabel)")
-                            .transition(.opacity)
-                            .animation(.spring(response: 0.25), value: safeIndex)
-                            .padding(.bottom, 4)
-                    }
+                    .padding(.bottom, 6)
                 }
             }
         }
