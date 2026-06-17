@@ -2,7 +2,7 @@ import SwiftUI
 
 // MARK: - SubGoal (recursive tree node)
 
-struct SubGoal: Identifiable, Codable {
+struct SubGoal: Identifiable, Codable, Equatable {
     var id        = UUID()
     var name: String
     var isComplete: Bool    = false
@@ -18,18 +18,18 @@ struct SubGoal: Identifiable, Codable {
 
 // MARK: - Metric
 
-enum MetricDirection: String, Codable {
+enum MetricDirection: String, Codable, Equatable {
     case higher   // want to increase (savings, vocabulary)
     case lower    // want to decrease (body weight, time)
 }
 
-struct MetricEntry: Identifiable, Codable {
+struct MetricEntry: Identifiable, Codable, Equatable {
     var id    = UUID()
     var date: Date
     var value: Double
 }
 
-struct MetricData: Codable {
+struct MetricData: Codable, Equatable {
     var unit: String
     var unitPrefix: String     = ""
     var direction: MetricDirection
@@ -63,7 +63,7 @@ struct MetricData: Codable {
 
 // MARK: - LifeGoalKind
 
-enum LifeGoalKind: Codable {
+enum LifeGoalKind: Codable, Equatable {
     case metric(MetricData)
     case project([SubGoal])
 
@@ -92,7 +92,7 @@ enum LifeGoalKind: Codable {
 
 // MARK: - LifeGoal
 
-struct LifeGoal: Identifiable, Codable {
+struct LifeGoal: Identifiable, Codable, Equatable {
     var id        = UUID()
     var name: String
     var colorData: GoalColor
