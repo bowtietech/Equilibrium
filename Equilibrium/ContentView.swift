@@ -299,28 +299,40 @@ struct ContentView: View {
     private var progressSubtitle: some View {
         switch mode {
         case .daily:
-            let g = store.goals[min(activeIndex, store.goals.count - 1)]
-            if let tp = g.todayProgress {
-                Text("\(Int(tp * 100))% today")
-                    .font(.system(size: 14, design: .monospaced))
-                    .foregroundStyle(.white.opacity(0.45))
-            } else {
-                Text("no goals today")
+            if store.goals.isEmpty {
+                Text("no goals set")
                     .font(.system(size: 14, design: .monospaced))
                     .foregroundStyle(.white.opacity(0.25))
+            } else {
+                let g = store.goals[min(activeIndex, store.goals.count - 1)]
+                if let tp = g.todayProgress {
+                    Text("\(Int(tp * 100))% today")
+                        .font(.system(size: 14, design: .monospaced))
+                        .foregroundStyle(.white.opacity(0.45))
+                } else {
+                    Text("no goals today")
+                        .font(.system(size: 14, design: .monospaced))
+                        .foregroundStyle(.white.opacity(0.25))
+                }
             }
         case .life:
-            let lg = store.lifeGoals[min(activeIndex, store.lifeGoals.count - 1)]
-            switch lg.kind {
-            case .metric(let m):
-                Text("\(m.currentLabel) → \(m.targetLabel)")
+            if store.lifeGoals.isEmpty {
+                Text("no life goals set")
                     .font(.system(size: 14, design: .monospaced))
-                    .foregroundStyle(.white.opacity(0.45))
-            case .project(let sgs):
-                let done = sgs.filter { $0.progress >= 1.0 }.count
-                Text("\(done)/\(sgs.count) areas complete")
-                    .font(.system(size: 14, design: .monospaced))
-                    .foregroundStyle(.white.opacity(0.45))
+                    .foregroundStyle(.white.opacity(0.25))
+            } else {
+                let lg = store.lifeGoals[min(activeIndex, store.lifeGoals.count - 1)]
+                switch lg.kind {
+                case .metric(let m):
+                    Text("\(m.currentLabel) → \(m.targetLabel)")
+                        .font(.system(size: 14, design: .monospaced))
+                        .foregroundStyle(.white.opacity(0.45))
+                case .project(let sgs):
+                    let done = sgs.filter { $0.progress >= 1.0 }.count
+                    Text("\(done)/\(sgs.count) areas complete")
+                        .font(.system(size: 14, design: .monospaced))
+                        .foregroundStyle(.white.opacity(0.45))
+                }
             }
         }
     }
