@@ -13,20 +13,28 @@ enum AppMode: String, CaseIterable {
 }
 
 struct ContentView: View {
-    @EnvironmentObject private var store: DataStore
+    @EnvironmentObject private var store:  DataStore
+    @EnvironmentObject private var health: HealthKitManager
+
+    @Environment(\.scenePhase) private var scenePhase
 
     @State private var mode             = AppMode.daily
     @State private var activeIndex      = 0
     @State private var navigateToDetail = false
     @State private var showProfile      = false
+    @State private var showHealthImport = false
 
     @AppStorage("profile_name")        private var profileName: String = ""
     @AppStorage("profile_avatar_col")  private var profileColorIdx: Int = 0
 
     private var entries: [WheelEntry] {
         switch mode {
-        case .daily: return store.goals.map(\.wheelEntry)
-        case .life:  return store.lifeGoals.map(\.wheelEntry)
+        case .daily:
+            return store.goals.map { goal in
+                goal.wheelEntry(healthProgress: health.progressById[goal.id])
+            }
+        case .life:
+            return store.lifeGoals.map(\.wheelEntry)
         }
     }
 
@@ -62,11 +70,22 @@ struct ContentView: View {
             ProfileView(
                 balanceScore: store.goals.balanceScore,
                 dailyGoalCount: store.goals.count,
-                lifeGoalCount: store.lifeGoals.count
+                lifeGoalCount: store.lifeGoals.count,
+                showHealthImport: $showHealthImport
             )
+        }
+        .sheet(isPresented: $showHealthImport) {
+            HealthImportView()
         }
         .onChange(of: mode) { _, _ in
             withAnimation(.spring(response: 0.4)) { activeIndex = 0 }
+        }
+        .task { await health.refresh(goals: store.goals) }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { Task { await health.refresh(goals: store.goals) } }
+        }
+        .onChange(of: store.goals) { _, goals in
+            Task { await health.refresh(goals: goals) }
         }
     }
 

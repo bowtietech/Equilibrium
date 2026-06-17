@@ -1,4 +1,5 @@
 import SwiftUI
+import HealthKit
 
 // MARK: - Schedule picker helpers (local to this file)
 
@@ -15,6 +16,7 @@ private let weekdayLabels = ["S", "M", "T", "W", "T", "F", "S"]  // index 0 = Su
 
 struct GoalDetailView: View {
     @Binding var goal: Goal
+    @EnvironmentObject private var health: HealthKitManager
     @Environment(\.dismiss) private var dismiss
 
     @State private var showingAddSheet   = false
@@ -53,7 +55,11 @@ struct GoalDetailView: View {
 
             List {
                 headerSection
-                itemsSection
+                if goal.isHealthBacked {
+                    healthSection
+                } else {
+                    itemsSection
+                }
             }
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
@@ -63,10 +69,12 @@ struct GoalDetailView: View {
         .toolbarColorScheme(.dark, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button { showingAddSheet = true } label: {
-                    Image(systemName: "plus")
-                        .fontWeight(.medium)
-                        .foregroundStyle(goal.color)
+                if !goal.isHealthBacked {
+                    Button { showingAddSheet = true } label: {
+                        Image(systemName: "plus")
+                            .fontWeight(.medium)
+                            .foregroundStyle(goal.color)
+                    }
                 }
             }
         }
@@ -77,17 +85,22 @@ struct GoalDetailView: View {
 
     // MARK: - Header
 
+    private var effectiveProgress: Double {
+        if let hkP = health.progressById[goal.id] { return hkP }
+        return goal.todayProgress ?? goal.progress
+    }
+
     private var headerSection: some View {
         Section {
             VStack(spacing: 20) {
                 ZStack {
                     Circle().stroke(goal.color.opacity(0.18), lineWidth: 9)
                     Circle()
-                        .trim(from: 0, to: goal.todayProgress ?? goal.progress)
+                        .trim(from: 0, to: effectiveProgress)
                         .stroke(goal.color, style: StrokeStyle(lineWidth: 9, lineCap: .round))
                         .rotationEffect(.degrees(-90))
                         .animation(.spring(response: 0.5, dampingFraction: 0.8),
-                                   value: goal.todayProgress)
+                                   value: effectiveProgress)
                     Image(systemName: goal.icon)
                         .font(.system(size: 30, weight: .light))
                         .foregroundStyle(goal.color)
@@ -99,7 +112,13 @@ struct GoalDetailView: View {
                         .font(.system(size: 30, weight: .bold, design: .rounded))
                         .foregroundStyle(goal.color)
 
-                    if let tp = goal.todayProgress {
+                    if goal.isHealthBacked, let target = goal.healthKitTarget,
+                       let unit = goal.healthKitUnit {
+                        let current = effectiveProgress * target
+                        Text("\(formattedValue(current, unit: unit)) / \(formattedValue(target, unit: unit))")
+                            .font(.system(size: 13, weight: .regular, design: .monospaced))
+                            .foregroundStyle(.white.opacity(0.38))
+                    } else if let tp = goal.todayProgress {
                         let done  = goal.items.filter { $0.isActiveToday && $0.isComplete }.count
                         let total = goal.items.filter(\.isActiveToday).count
                         Text("\(Int(tp * 100))% today  ·  \(done)/\(total) complete")
@@ -114,6 +133,64 @@ struct GoalDetailView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 28)
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+        }
+    }
+
+    private func formattedValue(_ value: Double, unit: String) -> String {
+        if unit == "steps" && value >= 1000 { return String(format: "%.1fk", value / 1000) }
+        if value < 10                       { return String(format: "%.1f \(unit)", value) }
+        return "\(Int(value)) \(unit)"
+    }
+
+    // MARK: - Health section (replaces items for HK-backed goals)
+
+    private var healthSection: some View {
+        Section {
+            VStack(spacing: 16) {
+                // Progress bar
+                VStack(spacing: 8) {
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            Capsule().fill(.white.opacity(0.08)).frame(height: 8)
+                            Capsule()
+                                .fill(
+                                    LinearGradient(
+                                        colors: [goal.color, goal.color.opacity(0.6)],
+                                        startPoint: .leading, endPoint: .trailing
+                                    )
+                                )
+                                .frame(width: geo.size.width * effectiveProgress, height: 8)
+                                .animation(.spring(response: 0.6), value: effectiveProgress)
+                        }
+                    }
+                    .frame(height: 8)
+
+                    HStack {
+                        Text("0")
+                            .font(.system(size: 10, design: .monospaced))
+                            .foregroundStyle(.white.opacity(0.25))
+                        Spacer()
+                        if let target = goal.healthKitTarget, let unit = goal.healthKitUnit {
+                            Text(formattedValue(target, unit: unit))
+                                .font(.system(size: 10, design: .monospaced))
+                                .foregroundStyle(.white.opacity(0.25))
+                        }
+                    }
+                }
+
+                // Source badge
+                HStack(spacing: 6) {
+                    Image(systemName: "heart.fill")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.red.opacity(0.7))
+                    Text("Synced from Apple Health")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.white.opacity(0.35))
+                }
+            }
+            .padding(.vertical, 12)
             .listRowBackground(Color.clear)
             .listRowSeparator(.hidden)
         }

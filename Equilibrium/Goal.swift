@@ -133,6 +133,13 @@ struct Goal: Identifiable, Codable {
     var icon: String
     var items: [GoalItem]
 
+    // HealthKit backing — when set, progress comes from HK not items
+    var healthKitIdentifier: String?
+    var healthKitTarget: Double?
+    var healthKitUnit: String?
+
+    var isHealthBacked: Bool { healthKitIdentifier != nil }
+
     // Computed — excluded from Codable automatically
     var color: Color { colorData.value }
 
@@ -147,10 +154,14 @@ struct Goal: Identifiable, Codable {
         return Double(today.filter(\.isComplete).count) / Double(today.count)
     }
 
-    var wheelEntry: WheelEntry {
-        WheelEntry(id: id, name: name, color: color, icon: icon,
-                   progress: todayProgress ?? progress)
+    /// Returns a WheelEntry, optionally overriding progress with a live HealthKit value.
+    func wheelEntry(healthProgress: Double? = nil) -> WheelEntry {
+        let p = healthProgress ?? todayProgress ?? progress
+        return WheelEntry(id: id, name: name, color: color, icon: icon, progress: p)
     }
+
+    // Legacy convenience kept for non-HK callers
+    var wheelEntry: WheelEntry { wheelEntry() }
 }
 
 // MARK: - Balance Score

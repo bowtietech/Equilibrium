@@ -28,6 +28,9 @@
 		BB0000000000000000000013 /* AuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000011 /* AuthManager.swift */; };
 		BB0000000000000000000014 /* AuthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000012 /* AuthView.swift */; };
 		BB0000000000000000000015 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = SS0000000000000000000002 /* Supabase */; };
+		BB0000000000000000000016 /* HealthKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000015 /* HealthKit.framework */; };
+		BB0000000000000000000017 /* HealthKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000016 /* HealthKitManager.swift */; };
+		BB0000000000000000000018 /* HealthImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000017 /* HealthImportView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -75,6 +78,9 @@
 		AA0000000000000000000012 /* AuthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthView.swift; sourceTree = "<group>"; };
 		AA0000000000000000000013 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		AA0000000000000000000014 /* Equilibrium.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Equilibrium.entitlements; sourceTree = "<group>"; };
+		AA0000000000000000000015 /* HealthKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = HealthKit.framework; path = System/Library/Frameworks/HealthKit.framework; sourceTree = SDKROOT; };
+		AA0000000000000000000016 /* HealthKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitManager.swift; sourceTree = "<group>"; };
+		AA0000000000000000000017 /* HealthImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthImportView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -83,6 +89,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				BB0000000000000000000015 /* Supabase in Frameworks */,
+				BB0000000000000000000016 /* HealthKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -122,6 +129,8 @@
 				AA0000000000000000000012 /* AuthView.swift */,
 				AA0000000000000000000013 /* Info.plist */,
 				AA0000000000000000000014 /* Equilibrium.entitlements */,
+				AA0000000000000000000016 /* HealthKitManager.swift */,
+				AA0000000000000000000017 /* HealthImportView.swift */,
 				AA0000000000000000000005 /* Assets.xcassets */,
 			);
 			path = Equilibrium;
@@ -215,37 +224,18 @@
 				Base,
 			);
 			mainGroup = DD0000000000000000000001;
-			productRefGroup = DD0000000000000000000004 /* Products */;
-			projectDirPath = "";
-			projectRoot = "";
 			packageReferences = (
 				SS0000000000000000000001 /* XCRemoteSwiftPackageReference "supabase-swift" */,
 			);
+			productRefGroup = DD0000000000000000000004 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
 			targets = (
 				EE0000000000000000000001 /* Equilibrium */,
 				EE0000000000000000000002 /* Equilibrium Watch App */,
 			);
 		};
 /* End PBXProject section */
-
-/* Begin XCRemoteSwiftPackageReference section */
-		SS0000000000000000000001 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/supabase/supabase-swift";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = "2.0.0";
-			};
-		};
-/* End XCRemoteSwiftPackageReference section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		SS0000000000000000000002 /* Supabase */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = SS0000000000000000000001 /* XCRemoteSwiftPackageReference "supabase-swift" */;
-			productName = Supabase;
-		};
-/* End XCSwiftPackageProductDependency section */
 
 /* Begin PBXResourcesBuildPhase section */
 		CC0000000000000000000003 /* Resources */ = {
@@ -283,6 +273,8 @@
 				BB0000000000000000000012 /* SupabaseClient.swift in Sources */,
 				BB0000000000000000000013 /* AuthManager.swift in Sources */,
 				BB0000000000000000000014 /* AuthView.swift in Sources */,
+				BB0000000000000000000017 /* HealthKitManager.swift in Sources */,
+				BB0000000000000000000018 /* HealthImportView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -429,12 +421,12 @@
 				CODE_SIGN_ENTITLEMENTS = Equilibrium/Equilibrium.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = T9UHHTM85B;
+				DEVELOPMENT_TEAM = 38B9P235X4;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = Equilibrium/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.bowtie.equilibrium;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bowtie.equilibrium.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -453,12 +445,12 @@
 				CODE_SIGN_ENTITLEMENTS = Equilibrium/Equilibrium.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = T9UHHTM85B;
+				DEVELOPMENT_TEAM = 38B9P235X4;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = Equilibrium/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.bowtie.equilibrium;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bowtie.equilibrium.app;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -476,13 +468,13 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = T9UHHTM85B;
+				DEVELOPMENT_TEAM = 38B9P235X4;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.bowtie.equilibrium;
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.bowtie.equilibrium.app;
 				INFOPLIST_KEY_WKWatchOnly = NO;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.bowtie.equilibrium.watchkitapp;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bowtie.equilibrium.app.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
@@ -500,13 +492,13 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = T9UHHTM85B;
+				DEVELOPMENT_TEAM = 38B9P235X4;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.bowtie.equilibrium;
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.bowtie.equilibrium.app;
 				INFOPLIST_KEY_WKWatchOnly = NO;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.bowtie.equilibrium.watchkitapp;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bowtie.equilibrium.app.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
@@ -548,6 +540,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		SS0000000000000000000001 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/supabase/supabase-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		SS0000000000000000000002 /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = SS0000000000000000000001 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = PP0000000000000000000001 /* Project object */;
 }

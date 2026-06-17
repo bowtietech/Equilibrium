@@ -2,14 +2,16 @@ import SwiftUI
 
 @main
 struct EquilibriumApp: App {
-    @StateObject private var store = DataStore()
-    @StateObject private var auth  = AuthManager()
+    @StateObject private var store  = DataStore()
+    @StateObject private var auth   = AuthManager()
+    @StateObject private var health = HealthKitManager()
 
     var body: some Scene {
         WindowGroup {
             RootView()
                 .environmentObject(store)
                 .environmentObject(auth)
+                .environmentObject(health)
         }
     }
 }

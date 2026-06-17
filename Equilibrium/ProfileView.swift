@@ -22,8 +22,10 @@ struct ProfileView: View {
     let balanceScore: Double
     let dailyGoalCount: Int
     let lifeGoalCount: Int
+    @Binding var showHealthImport: Bool
 
-    @EnvironmentObject private var auth: AuthManager
+    @EnvironmentObject private var auth:   AuthManager
+    @EnvironmentObject private var health: HealthKitManager
     @State private var showSignOutConfirm = false
 
     // Persisted profile fields
@@ -107,6 +109,7 @@ struct ProfileView: View {
                     statsSection
                     personalSection
                     preferencesSection
+                    healthSection
                     aboutSection
                     accountSection
                 }
@@ -375,6 +378,37 @@ struct ProfileView: View {
         .listRowSeparatorTint(.white.opacity(0.08))
     }
 
+    // MARK: - Health section
+
+    private var healthSection: some View {
+        Section {
+            Button {
+                dismiss()
+                showHealthImport = true
+            } label: {
+                profileRow(icon: "heart.fill", label: "Apple Health") {
+                    HStack(spacing: 6) {
+                        if health.isAuthorized {
+                            Text("Connected")
+                                .font(.system(size: 13))
+                                .foregroundStyle(.green.opacity(0.8))
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 12))
+                                .foregroundStyle(.green.opacity(0.8))
+                        } else {
+                            Text("Set up")
+                                .font(.system(size: 13))
+                                .foregroundStyle(.white.opacity(0.35))
+                        }
+                    }
+                }
+            }
+            .buttonStyle(.plain)
+        } header: { sectionHeader("Health") }
+        .listRowBackground(rowBG)
+        .listRowSeparatorTint(.white.opacity(0.08))
+    }
+
     // MARK: - Account section
 
     private var accountSection: some View {
@@ -465,6 +499,8 @@ private extension Text {
 }
 
 #Preview {
-    ProfileView(balanceScore: 0.73, dailyGoalCount: 6, lifeGoalCount: 6)
+    ProfileView(balanceScore: 0.73, dailyGoalCount: 6, lifeGoalCount: 6,
+                showHealthImport: .constant(false))
         .environmentObject(AuthManager())
+        .environmentObject(HealthKitManager())
 }
