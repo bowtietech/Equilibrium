@@ -359,26 +359,32 @@ private struct ProjectGoalDetail: View {
     // MARK: Area row
 
     private func areaRow(_ parent: Binding<SubGoal>) -> some View {
-        let sub = parent.wrappedValue
+        let sub        = parent.wrappedValue
         let isExpanded = expandedIDs.contains(sub.id)
+        let hasChildren = !sub.children.isEmpty
+
         return HStack(spacing: 14) {
-            ZStack {
-                Circle().stroke(goal.color.opacity(0.2), lineWidth: 4)
-                Circle()
-                    .trim(from: 0, to: sub.progress)
-                    .stroke(goal.color, style: StrokeStyle(lineWidth: 4, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
-                    .animation(.spring(response: 0.4), value: sub.progress)
+            // Checkbox — tapping completes/un-completes the area itself
+            Button {
+                withAnimation(.spring(response: 0.25)) {
+                    parent.isComplete.wrappedValue.toggle()
+                }
+            } label: {
+                Image(systemName: sub.isComplete ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 22))
+                    .foregroundStyle(sub.isComplete ? goal.color : .white.opacity(0.28))
+                    .animation(.spring(response: 0.2), value: sub.isComplete)
             }
-            .frame(width: 30, height: 30)
+            .buttonStyle(.plain)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(sub.name)
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.9))
-                let done  = sub.children.filter(\.isComplete).count
-                let total = sub.children.count
-                if total > 0 {
+                    .foregroundStyle(sub.isComplete ? .white.opacity(0.4) : .white.opacity(0.9))
+                    .strikethrough(sub.isComplete, color: .white.opacity(0.2))
+                if hasChildren {
+                    let done  = sub.children.filter { $0.progress >= 1.0 }.count
+                    let total = sub.children.count
                     Text("\(done)/\(total) · \(Int(sub.progress * 100))%")
                         .font(.system(size: 11, design: .monospaced))
                         .foregroundStyle(goal.color.opacity(0.6))
@@ -401,25 +407,26 @@ private struct ProjectGoalDetail: View {
             }
             .buttonStyle(.plain)
 
-            // Expand/collapse
-            if !sub.children.isEmpty {
-                Button {
-                    withAnimation(.spring(response: 0.28)) {
-                        if isExpanded { expandedIDs.remove(sub.id) }
-                        else          { expandedIDs.insert(sub.id) }
-                    }
-                } label: {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.35))
-                        .rotationEffect(.degrees(isExpanded ? 90 : 0))
-                }
-                .buttonStyle(.plain)
+            // Expand/collapse indicator
+            if hasChildren {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.35))
+                    .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                    .animation(.spring(response: 0.28), value: isExpanded)
             }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
         .contentShape(Rectangle())
+        // Tap the row body (anywhere except the buttons) to expand/collapse
+        .onTapGesture {
+            guard hasChildren else { return }
+            withAnimation(.spring(response: 0.28)) {
+                if isExpanded { expandedIDs.remove(sub.id) }
+                else          { expandedIDs.insert(sub.id) }
+            }
+        }
     }
 
     // MARK: Child row
