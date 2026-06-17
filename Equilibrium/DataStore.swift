@@ -22,17 +22,52 @@ final class DataStore: ObservableObject {
 
     @Published var goals: [Goal]
     @Published var lifeGoals: [LifeGoal]
+    @Published var needsOnboarding: Bool
 
     private var userId: UUID?
     private var cancellables = Set<AnyCancellable>()
 
-    private static let goalsKey     = "eq_goals_v1"
-    private static let lifeGoalsKey = "eq_life_goals_v1"
+    private static let goalsKey        = "eq_goals_v1"
+    private static let lifeGoalsKey    = "eq_life_goals_v1"
+    private static let onboardedKey    = "eq_onboarded_v1"
 
     init() {
-        goals     = Self.loadLocal(key: Self.goalsKey,     fallback: Goal.demos)
-        lifeGoals = Self.loadLocal(key: Self.lifeGoalsKey, fallback: LifeGoal.demos)
+        let stored  = Self.loadLocal(key: Self.goalsKey,     fallback: [Goal]())
+        let storedL = Self.loadLocal(key: Self.lifeGoalsKey, fallback: [LifeGoal]())
+        goals     = stored
+        lifeGoals = storedL
+
+        let hasFlag = UserDefaults.standard.bool(forKey: Self.onboardedKey)
+        if !hasFlag && !stored.isEmpty {
+            // Existing user who predates onboarding — skip it automatically
+            UserDefaults.standard.set(true, forKey: Self.onboardedKey)
+            needsOnboarding = false
+        } else {
+            needsOnboarding = !hasFlag
+        }
+
         setupAutoSave()
+    }
+
+    // MARK: - Onboarding
+
+    /// Called when the user finishes the onboarding flow.
+    func completeOnboarding(goals newGoals: [Goal]) {
+        goals = newGoals
+        UserDefaults.standard.set(true, forKey: Self.onboardedKey)
+        needsOnboarding = false
+        saveNow()
+    }
+
+    /// Clears all user goals and re-triggers onboarding.
+    func resetGoals() {
+        goals     = []
+        lifeGoals = []
+        UserDefaults.standard.removeObject(forKey: Self.onboardedKey)
+        UserDefaults.standard.removeObject(forKey: Self.goalsKey)
+        UserDefaults.standard.removeObject(forKey: Self.lifeGoalsKey)
+        needsOnboarding = true
+        if let userId { Task { try? await supabase.from("user_data").delete().eq("user_id", value: userId).execute() } }
     }
 
     // MARK: - User binding (called when auth session changes)
@@ -121,7 +156,7 @@ final class DataStore: ObservableObject {
     }
 
     func resetToDefaults() {
-        goals     = Goal.demos
-        lifeGoals = LifeGoal.demos
+        goals     = []
+        lifeGoals = []
     }
 }

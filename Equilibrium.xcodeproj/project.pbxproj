@@ -31,6 +31,7 @@
 		BB0000000000000000000016 /* HealthKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000015 /* HealthKit.framework */; };
 		BB0000000000000000000017 /* HealthKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000016 /* HealthKitManager.swift */; };
 		BB0000000000000000000018 /* HealthImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000017 /* HealthImportView.swift */; };
+		BB0000000000000000000019 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000018 /* OnboardingView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -58,6 +59,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		612E48252FE23FFF00909F34 /* Equilibrium Watch App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "Equilibrium Watch App.entitlements"; sourceTree = "<group>"; };
 		AA0000000000000000000001 /* Goal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Goal.swift; sourceTree = "<group>"; };
 		AA0000000000000000000002 /* GoalWheelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalWheelView.swift; sourceTree = "<group>"; };
 		AA0000000000000000000003 /* EquilibriumApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EquilibriumApp.swift; sourceTree = "<group>"; };
@@ -81,6 +83,7 @@
 		AA0000000000000000000015 /* HealthKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = HealthKit.framework; path = System/Library/Frameworks/HealthKit.framework; sourceTree = SDKROOT; };
 		AA0000000000000000000016 /* HealthKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitManager.swift; sourceTree = "<group>"; };
 		AA0000000000000000000017 /* HealthImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthImportView.swift; sourceTree = "<group>"; };
+		AA0000000000000000000018 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -103,12 +106,21 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		612E48242FE23F9700909F34 /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000000000000000000015 /* HealthKit.framework */,
+			);
+			name = "Recovered References";
+			sourceTree = "<group>";
+		};
 		DD0000000000000000000001 = {
 			isa = PBXGroup;
 			children = (
 				DD0000000000000000000002 /* Equilibrium */,
 				DD0000000000000000000003 /* Equilibrium Watch App */,
 				DD0000000000000000000004 /* Products */,
+				612E48242FE23F9700909F34 /* Recovered References */,
 			);
 			sourceTree = "<group>";
 		};
@@ -131,6 +143,7 @@
 				AA0000000000000000000014 /* Equilibrium.entitlements */,
 				AA0000000000000000000016 /* HealthKitManager.swift */,
 				AA0000000000000000000017 /* HealthImportView.swift */,
+				AA0000000000000000000018 /* OnboardingView.swift */,
 				AA0000000000000000000005 /* Assets.xcassets */,
 			);
 			path = Equilibrium;
@@ -139,6 +152,7 @@
 		DD0000000000000000000003 /* Equilibrium Watch App */ = {
 			isa = PBXGroup;
 			children = (
+				612E48252FE23FFF00909F34 /* Equilibrium Watch App.entitlements */,
 				AA0000000000000000000006 /* EquilibriumWatchApp.swift */,
 				AA0000000000000000000007 /* WatchContentView.swift */,
 				AA0000000000000000000008 /* Assets.xcassets */,
@@ -275,6 +289,7 @@
 				BB0000000000000000000014 /* AuthView.swift in Sources */,
 				BB0000000000000000000017 /* HealthKitManager.swift in Sources */,
 				BB0000000000000000000018 /* HealthImportView.swift in Sources */,
+				BB0000000000000000000019 /* OnboardingView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -466,11 +481,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "Equilibrium Watch App/Equilibrium Watch App.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 38B9P235X4;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "Help us keep you on track with health data.";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.bowtie.equilibrium.app;
 				INFOPLIST_KEY_WKWatchOnly = NO;
 				MARKETING_VERSION = 1.0;
@@ -490,11 +507,13 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "Equilibrium Watch App/Equilibrium Watch App.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 38B9P235X4;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "Help us keep you on track with health data.";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.bowtie.equilibrium.app;
 				INFOPLIST_KEY_WKWatchOnly = NO;
 				MARKETING_VERSION = 1.0;

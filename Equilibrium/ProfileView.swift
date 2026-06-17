@@ -26,7 +26,9 @@ struct ProfileView: View {
 
     @EnvironmentObject private var auth:   AuthManager
     @EnvironmentObject private var health: HealthKitManager
-    @State private var showSignOutConfirm = false
+    @EnvironmentObject private var store:  DataStore
+    @State private var showSignOutConfirm  = false
+    @State private var showResetConfirm    = false
 
     // Persisted profile fields
     @AppStorage(PK.name)         private var name: String  = ""
@@ -422,9 +424,22 @@ struct ProfileView: View {
                 }
             }
 
-            Button {
-                showSignOutConfirm = true
-            } label: {
+            Button { showResetConfirm = true } label: {
+                HStack {
+                    Label {
+                        Text("Reset All Goals")
+                            .foregroundStyle(.orange.opacity(0.9))
+                    } icon: {
+                        Image(systemName: "arrow.counterclockwise.circle")
+                            .foregroundStyle(.orange.opacity(0.75))
+                            .frame(width: 20)
+                    }
+                    Spacer()
+                }
+            }
+            .buttonStyle(.plain)
+
+            Button { showSignOutConfirm = true } label: {
                 HStack {
                     Label {
                         Text("Sign Out")
@@ -441,6 +456,15 @@ struct ProfileView: View {
         } header: { sectionHeader("Account") }
         .listRowBackground(rowBG)
         .listRowSeparatorTint(.white.opacity(0.08))
+        .confirmationDialog("Reset all goals?", isPresented: $showResetConfirm, titleVisibility: .visible) {
+            Button("Reset Goals", role: .destructive) {
+                dismiss()
+                store.resetGoals()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This will remove all your daily and life goals. You'll be taken through setup again.")
+        }
         .confirmationDialog("Sign out of Equilibrium?", isPresented: $showSignOutConfirm, titleVisibility: .visible) {
             Button("Sign Out", role: .destructive) {
                 Task { try? await auth.signOut() }
@@ -503,4 +527,5 @@ private extension Text {
                 showHealthImport: .constant(false))
         .environmentObject(AuthManager())
         .environmentObject(HealthKitManager())
+        .environmentObject(DataStore())
 }

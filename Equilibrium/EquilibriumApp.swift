@@ -27,7 +27,11 @@ struct RootView: View {
             if auth.isLoading {
                 splashView
             } else if auth.isAuthenticated {
-                ContentView()
+                if store.needsOnboarding {
+                    OnboardingView()
+                } else {
+                    ContentView()
+                }
             } else {
                 AuthView()
             }
