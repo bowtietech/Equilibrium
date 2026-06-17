@@ -29,19 +29,12 @@ struct GoalColor: Codable, Equatable {
         .teal, .gold, .rose, .violet, .blue, .amber
     ]
 
-    /// Returns the palette color used least often among `existing`.
-    /// Cycles evenly so adjacent goals on the wheel rarely share a hue.
+    /// Returns the next palette color that keeps strict round-robin order.
+    /// `existing` is the ordered list of colors already in use (active goals
+    /// in their array order). The returned color is palette[existing.count % 12],
+    /// guaranteeing no repeats until all 12 entries are used.
     static func next(avoiding existing: [GoalColor]) -> GoalColor {
-        // Count usage of each palette entry by index (no Hashable required)
-        var counts = [Int](repeating: 0, count: palette.count)
-        for c in existing {
-            if let idx = palette.firstIndex(of: c) {
-                counts[idx] += 1
-            }
-        }
-        // Pick the index with the lowest count (first in palette order on tie)
-        let bestIdx = counts.indices.min(by: { counts[$0] < counts[$1] }) ?? 0
-        return palette[bestIdx]
+        palette[existing.count % palette.count]
     }
 }
 

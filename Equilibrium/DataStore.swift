@@ -46,6 +46,8 @@ final class DataStore: ObservableObject {
             needsOnboarding = !hasFlag
         }
 
+        rebalanceColors()       // fix any pre-existing color conflicts on first launch
+        setupColorRebalance()   // watch for future active-set changes
         setupAutoSave()
     }
 
@@ -55,6 +57,7 @@ final class DataStore: ObservableObject {
     func completeOnboarding(goals newGoals: [Goal], lifeGoals newLifeGoals: [LifeGoal] = []) {
         goals     = newGoals
         lifeGoals = newLifeGoals
+        rebalanceColors()   // assign clean palette before saving
         UserDefaults.standard.set(true, forKey: Self.onboardedKey)
         needsOnboarding = false
         saveNow()
@@ -94,6 +97,7 @@ final class DataStore: ObservableObject {
             await MainActor.run {
                 if !row.goals.isEmpty     { self.goals     = row.goals }
                 if !row.lifeGoals.isEmpty { self.lifeGoals = row.lifeGoals }
+                self.rebalanceColors()
             }
         } catch {
             // No cloud row yet (new user) — local/demo data is used
@@ -109,6 +113,50 @@ final class DataStore: ObservableObject {
                 .upsert(row)
                 .execute()
         }
+    }
+
+    // MARK: - Color rebalancing
+    //
+    // Assigns palette colors round-robin to active goals in array order so
+    // no two active goals ever share a color until all 12 palette entries
+    // are used. Daily and life goal wheels are rebalanced independently
+    // (they are never shown at the same time).
+    // Triggered automatically via Combine when the active goal IDs change.
+
+    func rebalanceColors() {
+        let palette = GoalColor.palette
+
+        var slot = 0
+        for i in goals.indices where goals[i].isActive {
+            let want = palette[slot % palette.count]
+            if goals[i].colorData != want { goals[i].colorData = want }
+            slot += 1
+        }
+
+        slot = 0
+        for i in lifeGoals.indices where lifeGoals[i].isActive {
+            let want = palette[slot % palette.count]
+            if lifeGoals[i].colorData != want { lifeGoals[i].colorData = want }
+            slot += 1
+        }
+    }
+
+    private func setupColorRebalance() {
+        // Only fire when the *set* of active IDs changes (not on color changes),
+        // preventing the rebalance from triggering itself in a loop.
+        $goals
+            .map { $0.filter(\.isActive).map(\.id) }
+            .removeDuplicates()
+            .dropFirst()   // skip the load-time emission; rebalanceColors() is called from init
+            .sink { [weak self] _ in self?.rebalanceColors() }
+            .store(in: &cancellables)
+
+        $lifeGoals
+            .map { $0.filter(\.isActive).map(\.id) }
+            .removeDuplicates()
+            .dropFirst()
+            .sink { [weak self] _ in self?.rebalanceColors() }
+            .store(in: &cancellables)
     }
 
     // MARK: - Auto-save (local + cloud)
