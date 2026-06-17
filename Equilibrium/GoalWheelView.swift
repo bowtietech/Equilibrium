@@ -225,16 +225,17 @@ struct GoalWheelView: View {
         let coreDot: Color = colorScheme == .dark ? .white.opacity(0.9) : Color.primary.opacity(0.9)
         ctx.fill(Path(ellipseIn: coreRect), with: .color(coreDot))
 
-        // Top indicator — downward-pointing triangle in the active goal's color
+        // Top indicator — downward-pointing triangle in the active goal's color.
+        // Positioned fully outside the wheel radius so it never overlaps a 0%-progress dot.
         let triHW: CGFloat = max(5.5, radius * 0.048)   // half-width of base
         let triH:  CGFloat = max(6.5, radius * 0.056)   // height (tip to base)
-        let triTipY = center.y - radius + triH * 0.5 - 2  // tip sits just inside the wheel boundary
-        let triTopY = triTipY - triH                       // flat base above the tip
+        let triTipY = center.y - radius - 5              // tip clears the outermost dot with a small gap
+        let triTopY = triTipY - triH
 
         var tri = Path()
-        tri.move(to: CGPoint(x: center.x,        y: triTipY))          // bottom apex (points down)
-        tri.addLine(to: CGPoint(x: center.x - triHW, y: triTopY))      // top-left
-        tri.addLine(to: CGPoint(x: center.x + triHW, y: triTopY))      // top-right
+        tri.move(to: CGPoint(x: center.x,            y: triTipY))   // bottom apex (points down)
+        tri.addLine(to: CGPoint(x: center.x - triHW, y: triTopY))   // top-left
+        tri.addLine(to: CGPoint(x: center.x + triHW, y: triTopY))   // top-right
         tri.closeSubpath()
 
         ctx.drawLayer { layer in
