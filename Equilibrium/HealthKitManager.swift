@@ -26,7 +26,22 @@ struct HealthMetricTemplate: Identifiable {
         case mindful        // HKCategoryTypeIdentifier.mindfulSession → minutes
     }
 
-    static let all: [HealthMetricTemplate] = [
+    // MARK: - Locale helpers
+
+    /// True when the device locale uses the metric system for mass/distance.
+    private static var usesMetric: Bool { Locale.current.usesMetricSystem }
+
+    static var massUnit:         HKUnit { usesMetric ? .gramUnit(with: .kilo) : .pound() }
+    static var massUnitLabel:    String { usesMetric ? "kg" : "lbs" }
+    static var massDefault:      Double { usesMetric ? 70 : 154 }     // ~70 kg ≈ 154 lbs
+
+    static var distUnit:         HKUnit { usesMetric ? .meterUnit(with: .kilo) : .mile() }
+    static var distUnitLabel:    String { usesMetric ? "km" : "mi" }
+    static var distDefault:      Double { usesMetric ? 5 : 3 }        // ~5 km ≈ 3 mi
+
+    // MARK: - Template catalog
+
+    static var all: [HealthMetricTemplate] = [
         // Fitness
         HealthMetricTemplate(
             id:            HKQuantityTypeIdentifier.stepCount.rawValue,
@@ -66,10 +81,10 @@ struct HealthMetricTemplate: Identifiable {
             name:          "Distance",
             icon:          "map",
             colorData:     .cyan,
-            defaultTarget: 5,
-            unitLabel:     "km",
+            defaultTarget: distDefault,
+            unitLabel:     distUnitLabel,
             category:      "Fitness",
-            queryKind:     .quantitySum(.distanceWalkingRunning, .meterUnit(with: .kilo)),
+            queryKind:     .quantitySum(.distanceWalkingRunning, distUnit),
             isLowerBetter: false
         ),
         // Sleep
@@ -113,10 +128,10 @@ struct HealthMetricTemplate: Identifiable {
             name:          "Body Weight",
             icon:          "scalemass.fill",
             colorData:     .blue,
-            defaultTarget: 70,
-            unitLabel:     "kg",
+            defaultTarget: massDefault,
+            unitLabel:     massUnitLabel,
             category:      "Body",
-            queryKind:     .quantityAverage(.bodyMass, .gramUnit(with: .kilo)),
+            queryKind:     .quantityAverage(.bodyMass, massUnit),
             isLowerBetter: true
         ),
         HealthMetricTemplate(
