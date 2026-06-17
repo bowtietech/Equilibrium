@@ -324,6 +324,10 @@ struct ContentView: View {
         .frame(height: 88)
         .padding(.bottom, 4)
         .contentShape(Rectangle())
+        .onTapGesture {
+            guard !entries.isEmpty else { return }
+            navigateToDetail = true
+        }
         .gesture(
             DragGesture(minimumDistance: 20)
                 .onEnded { value in
@@ -334,10 +338,8 @@ struct ContentView: View {
                     feedback.impactOccurred()
                     withAnimation(.spring(response: 0.32, dampingFraction: 0.72)) {
                         if dx < 0 {
-                            // swipe left → next goal
                             activeIndex = (activeIndex + 1) % entries.count
                         } else {
-                            // swipe right → previous goal
                             activeIndex = (activeIndex - 1 + entries.count) % entries.count
                         }
                     }
