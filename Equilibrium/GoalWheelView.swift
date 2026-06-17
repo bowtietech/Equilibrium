@@ -13,7 +13,7 @@ struct GoalWheelView: View {
     var body: some View {
         GeometryReader { geo in
             let size   = min(geo.size.width, geo.size.height)
-            let radius = size * 0.43
+            let radius = size * 0.47
             let center = CGPoint(x: geo.size.width / 2, y: geo.size.height / 2)
 
             Canvas { ctx, _ in

@@ -299,7 +299,7 @@ struct ContentView: View {
             navigateToDetail = true
         })
         .frame(maxWidth: .infinity)
-        .frame(height: 300)
+        .frame(height: 340)
     }
 
     private var hint: some View {
