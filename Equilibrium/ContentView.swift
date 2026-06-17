@@ -101,17 +101,32 @@ struct ContentView: View {
                 }
             }
         }
-        .onChange(of: store.goals) { _, goals in
-            let activeCount = goals.filter(\.isActive).count
-            if mode == .daily && activeIndex >= activeCount {
-                activeIndex = max(0, activeCount - 1)
+        .onChange(of: store.goals) { old, new in
+            let prevActive = old.filter(\.isActive).count
+            let nextActive = new.filter(\.isActive).count
+            if mode == .daily {
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
+                    if nextActive > prevActive {
+                        // Goal added or re-activated — jump to it (it's last in the active list)
+                        activeIndex = max(0, nextActive - 1)
+                    } else if activeIndex >= nextActive {
+                        activeIndex = max(0, nextActive - 1)
+                    }
+                }
             }
-            Task { await health.refresh(goals: goals) }
+            Task { await health.refresh(goals: new) }
         }
-        .onChange(of: store.lifeGoals) { _, lifeGoals in
-            let activeCount = lifeGoals.filter(\.isActive).count
-            if mode == .life && activeIndex >= activeCount {
-                activeIndex = max(0, activeCount - 1)
+        .onChange(of: store.lifeGoals) { old, new in
+            let prevActive = old.filter(\.isActive).count
+            let nextActive = new.filter(\.isActive).count
+            if mode == .life {
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.75)) {
+                    if nextActive > prevActive {
+                        activeIndex = max(0, nextActive - 1)
+                    } else if activeIndex >= nextActive {
+                        activeIndex = max(0, nextActive - 1)
+                    }
+                }
             }
         }
     }
