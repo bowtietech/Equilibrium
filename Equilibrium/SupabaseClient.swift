@@ -1,4 +1,5 @@
 import Supabase
+import Foundation
 
 // Shared Supabase client — one instance for the entire app lifetime.
 let supabase = SupabaseClient(

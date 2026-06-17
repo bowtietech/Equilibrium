@@ -34,6 +34,10 @@ struct RootView: View {
         .onChange(of: auth.session?.user.id) { _, userId in
             store.setUser(userId)
         }
+        // Handle email confirmation / OAuth deep links (equilibrium://auth-callback)
+        .onOpenURL { url in
+            Task { await auth.handle(url: url) }
+        }
     }
 
     private var splashView: some View {
