@@ -458,11 +458,12 @@ struct ProfileView: View {
         .listRowSeparatorTint(.white.opacity(0.08))
         .confirmationDialog("Reset all goals?", isPresented: $showResetConfirm, titleVisibility: .visible) {
             Button("Reset Goals", role: .destructive) {
-                // Dismiss the sheet first so RootView can cleanly swap ContentView → OnboardingView
-                // without a sheet being open on the departing view.
+                // Drop keyboard focus first — if the name field was active, the keyboard
+                // animation conflicts with dismiss() and can silently cancel the sheet.
+                nameFocused = false
                 dismiss()
                 Task {
-                    try? await Task.sleep(for: .milliseconds(400))
+                    try? await Task.sleep(for: .milliseconds(450))
                     store.resetGoals()
                 }
             }
