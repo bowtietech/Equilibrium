@@ -13,7 +13,9 @@ struct GoalWheelView: View {
     var body: some View {
         GeometryReader { geo in
             let size   = min(geo.size.width, geo.size.height)
-            let radius = size * 0.47
+            // 0.44 keeps ~27pt clearance on all sides so the pip indicator and
+            // glow shadows aren't clipped by the Canvas frame.
+            let radius = size * 0.44
             let center = CGPoint(x: geo.size.width / 2, y: geo.size.height / 2)
 
             Canvas { ctx, _ in

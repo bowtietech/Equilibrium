@@ -153,10 +153,14 @@ private struct AddDailyContent: View {
         let alreadyAdded = addedIDs.contains(sg.name) ||
                            store.goals.contains { $0.name == sg.name }
         Button {
-            guard !alreadyAdded else { return }
-            store.goals.append(sg.toGoal())
-            addedIDs.insert(sg.name)
-            showFlash(sg.name)
+            if alreadyAdded {
+                store.goals.removeAll { $0.name == sg.name }
+                addedIDs.remove(sg.name)
+            } else {
+                store.goals.append(sg.toGoal())
+                addedIDs.insert(sg.name)
+                showFlash(sg.name)
+            }
         } label: {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
@@ -222,16 +226,20 @@ private struct AddDailyContent: View {
         let value = healthValues[template.id] ?? 0
 
         Button {
-            guard !alreadyAdded else { return }
-            store.goals.append(Goal(
-                name: template.name, colorData: template.colorData, icon: template.icon,
-                items: [],
-                healthKitIdentifier: template.id,
-                healthKitTarget: template.defaultTarget,
-                healthKitUnit: template.unitLabel
-            ))
-            addedIDs.insert(template.id)
-            showFlash(template.name)
+            if alreadyAdded {
+                store.goals.removeAll { $0.healthKitIdentifier == template.id }
+                addedIDs.remove(template.id)
+            } else {
+                store.goals.append(Goal(
+                    name: template.name, colorData: template.colorData, icon: template.icon,
+                    items: [],
+                    healthKitIdentifier: template.id,
+                    healthKitTarget: template.defaultTarget,
+                    healthKitUnit: template.unitLabel
+                ))
+                addedIDs.insert(template.id)
+                showFlash(template.name)
+            }
         } label: {
             HStack(spacing: 14) {
                 ZStack {
@@ -525,10 +533,14 @@ private struct AddLifeContent: View {
         }()
 
         Button {
-            guard !alreadyAdded else { return }
-            store.lifeGoals.append(sg.toLifeGoal())
-            addedIDs.insert(sg.name)
-            showFlash(sg.name)
+            if alreadyAdded {
+                store.lifeGoals.removeAll { $0.name == sg.name }
+                addedIDs.remove(sg.name)
+            } else {
+                store.lifeGoals.append(sg.toLifeGoal())
+                addedIDs.insert(sg.name)
+                showFlash(sg.name)
+            }
         } label: {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
