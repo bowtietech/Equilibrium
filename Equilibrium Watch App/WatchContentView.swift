@@ -1,57 +1,130 @@
 import SwiftUI
 
-struct WatchContentView: View {
-    @State private var goals       = Goal.demos
-    @State private var activeIndex = 0
+// MARK: - Local mode enum (watch-only)
+private enum WatchMode: String, CaseIterable {
+    case daily = "daily"
+    case life  = "life"
+}
 
-    private var active: Goal { goals[activeIndex] }
+// MARK: - Root view
+
+struct WatchContentView: View {
+    @EnvironmentObject private var watchStore: WatchDataStore
+    @State private var mode: WatchMode = .daily
 
     var body: some View {
-        ZStack {
-            Color(red: 0.04, green: 0.04, blue: 0.09)
-                .ignoresSafeArea()
-
-            RadialGradient(
-                colors: [active.color.opacity(0.15), .clear],
-                center: .center,
-                startRadius: 0,
-                endRadius: 120
+        TabView(selection: $mode) {
+            WatchGoalPage(
+                modeLabel:   "TODAY",
+                entries:     watchStore.goals.filter(\.isActive).map(\.wheelEntry),
+                emptyIcon:   "list.bullet.clipboard"
             )
-            .ignoresSafeArea()
-            .animation(.easeInOut(duration: 0.4), value: activeIndex)
+            .tag(WatchMode.daily)
 
-            VStack(spacing: 3) {
-                HStack(spacing: 5) {
-                    Image(systemName: active.icon)
-                        .font(.system(size: 12, weight: .light))
-                        .foregroundStyle(active.color)
+            WatchGoalPage(
+                modeLabel:   "LIFE",
+                entries:     watchStore.lifeGoals.filter(\.isActive).map(\.wheelEntry),
+                emptyIcon:   "mountain.2"
+            )
+            .tag(WatchMode.life)
+        }
+        .tabViewStyle(.page(indexDisplayMode: .always))
+        .animation(.easeInOut(duration: 0.28), value: mode)
+    }
+}
 
-                    Text(active.name)
-                        .font(.system(size: 15, weight: .bold, design: .rounded))
-                        .foregroundStyle(active.color)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.75)
+// MARK: - Single mode page
+
+struct WatchGoalPage: View {
+    let modeLabel: String
+    let entries:   [WheelEntry]
+    let emptyIcon: String
+
+    @State private var activeIndex = 0
+
+    private var safeIndex: Int {
+        entries.isEmpty ? 0 : min(activeIndex, entries.count - 1)
+    }
+    private var active: WheelEntry? { entries.isEmpty ? nil : entries[safeIndex] }
+
+    var body: some View {
+        GeometryReader { geo in
+            ZStack {
+                Color.appBg.ignoresSafeArea()
+
+                if let a = active {
+                    RadialGradient(
+                        colors: [a.color.opacity(0.18), .clear],
+                        center: .center,
+                        startRadius: 0,
+                        endRadius: geo.size.width * 0.6
+                    )
+                    .ignoresSafeArea()
+                    .animation(.easeInOut(duration: 0.4), value: safeIndex)
                 }
-                .id("name-\(activeIndex)")
-                .transition(.opacity.combined(with: .scale(scale: 0.9)))
-                .animation(.spring(response: 0.25, dampingFraction: 0.7), value: activeIndex)
 
-                GoalWheelView(goals: goals.map(\.wheelEntry), activeIndex: $activeIndex)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                VStack(spacing: 0) {
+                    Text(modeLabel)
+                        .font(.system(size: 8, weight: .semibold, design: .monospaced))
+                        .foregroundStyle(.primary.opacity(0.35))
+                        .padding(.top, 4)
 
-                Text("\(Int(active.progress * 100))%")
-                    .font(.system(size: 11, weight: .medium, design: .monospaced))
-                    .foregroundStyle(.white.opacity(0.45))
-                    .id("pct-\(activeIndex)")
-                    .transition(.opacity)
-                    .animation(.spring(response: 0.25), value: activeIndex)
+                    if let a = active {
+                        HStack(spacing: 4) {
+                            Image(systemName: a.icon)
+                                .font(.system(size: 10, weight: .light))
+                                .foregroundStyle(a.color)
+                            Text(a.name)
+                                .font(.system(size: 13, weight: .bold, design: .rounded))
+                                .foregroundStyle(a.color)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.7)
+                        }
+                        .id("name-\(safeIndex)-\(modeLabel)")
+                        .transition(.opacity.combined(with: .scale(scale: 0.92)))
+                        .animation(.spring(response: 0.25, dampingFraction: 0.7), value: safeIndex)
+                        .padding(.top, 2)
+                    } else {
+                        Text("No \(modeLabel.lowercased()) goals")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.primary.opacity(0.35))
+                            .padding(.top, 2)
+                    }
+
+                    if entries.isEmpty {
+                        Spacer()
+                        Image(systemName: emptyIcon)
+                            .font(.system(size: 28))
+                            .foregroundStyle(.primary.opacity(0.15))
+                        Spacer()
+                    } else {
+                        GoalWheelView(goals: entries, activeIndex: $activeIndex)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .padding(.vertical, -4)
+                    }
+
+                    if let a = active {
+                        Text("\(Int(a.progress * 100))%")
+                            .font(.system(size: 10, weight: .medium, design: .monospaced))
+                            .foregroundStyle(.primary.opacity(0.4))
+                            .id("pct-\(safeIndex)-\(modeLabel)")
+                            .transition(.opacity)
+                            .animation(.spring(response: 0.25), value: safeIndex)
+                            .padding(.bottom, 2)
+                    }
+                }
+                .padding(.horizontal, 2)
             }
-            .padding(.vertical, 6)
-            .padding(.horizontal, 4)
+        }
+        .onChange(of: entries.count) { _, count in
+            if activeIndex >= count && count > 0 {
+                activeIndex = count - 1
+            }
         }
     }
 }
 
 #Preview {
     WatchContentView()
+        .environmentObject(WatchDataStore())
 }

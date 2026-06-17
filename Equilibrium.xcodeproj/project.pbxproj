@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AA30001200000001 /* WatchConnector.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA30001100000001 /* WatchConnector.swift */; };
+		AA30002200000001 /* WatchDataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA30002100000001 /* WatchDataStore.swift */; };
+		AA20001200000001 /* WatchConnectivity.framework in Frameworks (iOS) */ = {isa = PBXBuildFile; fileRef = AA20001100000001 /* WatchConnectivity.framework */; };
+		AA20001300000001 /* WatchConnectivity.framework in Frameworks (Watch) */ = {isa = PBXBuildFile; fileRef = AA20001100000001 /* WatchConnectivity.framework */; };
 		AA10001300000001 /* AppColors.swift in Sources (Watch) */ = {isa = PBXBuildFile; fileRef = AA10001100000001 /* AppColors.swift */; };
 		AA10001200000001 /* AppColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA10001100000001 /* AppColors.swift */; };
 		BB0000000000000000000001 /* Goal.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000001 /* Goal.swift */; };
@@ -62,6 +66,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		AA30001100000001 /* WatchConnector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchConnector.swift; sourceTree = "<group>"; };
+		AA30002100000001 /* WatchDataStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchDataStore.swift; sourceTree = "<group>"; };
+		AA20001100000001 /* WatchConnectivity.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WatchConnectivity.framework; path = System/Library/Frameworks/WatchConnectivity.framework; sourceTree = SDKROOT; };
 		AA10001100000001 /* AppColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppColors.swift; sourceTree = "<group>"; };
 		612E48252FE23FFF00909F34 /* Equilibrium Watch App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "Equilibrium Watch App.entitlements"; sourceTree = "<group>"; };
 		AA0000000000000000000001 /* Goal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Goal.swift; sourceTree = "<group>"; };
@@ -98,6 +105,7 @@
 			files = (
 				BB0000000000000000000015 /* Supabase in Frameworks */,
 				BB0000000000000000000016 /* HealthKit.framework in Frameworks */,
+				AA20001200000001 /* WatchConnectivity.framework in Frameworks (iOS) */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -105,6 +113,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AA20001300000001 /* WatchConnectivity.framework in Frameworks (Watch) */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -115,6 +124,7 @@
 			isa = PBXGroup;
 			children = (
 				AA0000000000000000000015 /* HealthKit.framework */,
+				AA20001100000001 /* WatchConnectivity.framework */,
 			);
 			name = "Recovered References";
 			sourceTree = "<group>";
@@ -151,6 +161,7 @@
 			AA0000000000000000000018 /* OnboardingView.swift */,
 			AA0000000000000000000019 /* AddGoalSheet.swift */,
 				AA10001100000001 /* AppColors.swift */,
+				AA30001100000001 /* WatchConnector.swift */,
 			AA0000000000000000000005 /* Assets.xcassets */,
 			);
 			path = Equilibrium;
@@ -161,6 +172,7 @@
 			children = (
 				612E48252FE23FFF00909F34 /* Equilibrium Watch App.entitlements */,
 				AA0000000000000000000006 /* EquilibriumWatchApp.swift */,
+				AA30002100000001 /* WatchDataStore.swift */,
 				AA0000000000000000000007 /* WatchContentView.swift */,
 				AA0000000000000000000008 /* Assets.xcassets */,
 			);
@@ -283,7 +295,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				BB0000000000000000000001 /* Goal.swift in Sources */,
-				AA10001300000001 /* AppColors.swift in Sources (Watch) */,
 				BB000000000000000000000D /* LifeGoal.swift in Sources */,
 				BB0000000000000000000002 /* GoalWheelView.swift in Sources */,
 				BB0000000000000000000003 /* EquilibriumApp.swift in Sources */,
@@ -300,6 +311,7 @@
 				BB0000000000000000000019 /* OnboardingView.swift in Sources */,
 			BB000000000000000000001A /* AddGoalSheet.swift in Sources */,
 				AA10001200000001 /* AppColors.swift in Sources */,
+				AA30001200000001 /* WatchConnector.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -311,6 +323,8 @@
 				BB000000000000000000000F /* LifeGoal.swift in Sources */,
 				BB0000000000000000000007 /* GoalWheelView.swift in Sources */,
 				BB0000000000000000000008 /* EquilibriumWatchApp.swift in Sources */,
+				AA10001300000001 /* AppColors.swift in Sources (Watch) */,
+				AA30002200000001 /* WatchDataStore.swift in Sources */,
 				BB0000000000000000000009 /* WatchContentView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

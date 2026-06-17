@@ -12,6 +12,7 @@ struct EquilibriumApp: App {
                 .environmentObject(store)
                 .environmentObject(auth)
                 .environmentObject(health)
+                .task { WatchConnector.shared.connect(to: store) }
         }
     }
 }
