@@ -480,6 +480,19 @@ struct ProfileView: View {
                 syncDone      = false
                 Task {
                     await health.syncAll(goals: store.goals)
+                    // Also refresh health-backed life goals
+                    let updates = await health.latestLifeGoalValues(for: store.lifeGoals)
+                    let today   = Calendar.current.startOfDay(for: Date())
+                    for (id, value) in updates {
+                        guard let idx = store.lifeGoals.firstIndex(where: { $0.id == id }),
+                              case .metric(var data) = store.lifeGoals[idx].kind else { continue }
+                        data.currentValue = value
+                        let lastDay = data.history.last.map { Calendar.current.startOfDay(for: $0.date) }
+                        if lastDay != today {
+                            data.history.append(MetricEntry(date: Date(), value: value))
+                        }
+                        store.lifeGoals[idx].kind = .metric(data)
+                    }
                     syncingHealth = false
                     withAnimation { syncDone = true }
                     try? await Task.sleep(for: .seconds(2))

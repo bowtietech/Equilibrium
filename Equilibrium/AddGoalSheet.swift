@@ -156,6 +156,165 @@ private struct HKTargetConfigSheet: View {
     }
 }
 
+// MARK: - Health Life Goal config sheet (target + shows current reading)
+
+private struct HKLifeGoalConfigSheet: View {
+    let template: HealthMetricTemplate
+    var onAdd: (Double, Double) -> Void   // (target, startValue)
+
+    @EnvironmentObject private var health: HealthKitManager
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var targetText  = ""
+    @State private var currentHK   = 0.0
+    @State private var loading     = true
+
+    init(template: HealthMetricTemplate, onAdd: @escaping (Double, Double) -> Void) {
+        self.template = template
+        self.onAdd    = onAdd
+        _targetText   = State(initialValue: String(format: "%.1f", template.defaultTarget))
+    }
+
+    private var parsedTarget: Double? {
+        let t = Double(targetText.trimmingCharacters(in: .whitespaces))
+        return (t ?? 0) > 0 ? t : nil
+    }
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Color.appBg.ignoresSafeArea()
+                VStack(spacing: 24) {
+                    // Icon + name
+                    HStack(spacing: 14) {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 14)
+                                .fill(template.colorData.value.opacity(0.18))
+                                .frame(width: 52, height: 52)
+                            Image(systemName: template.icon)
+                                .font(.system(size: 22))
+                                .foregroundStyle(template.colorData.value)
+                        }
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(template.name)
+                                .font(.system(size: 17, weight: .semibold))
+                                .foregroundStyle(.primary)
+                            Text("Life Goal · Metric")
+                                .font(.system(size: 12))
+                                .foregroundStyle(.primary.opacity(0.4))
+                        }
+                        Spacer()
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.top, 28)
+
+                    // Current reading from Apple Health
+                    VStack(spacing: 6) {
+                        Text("CURRENT READING FROM APPLE HEALTH")
+                            .font(.system(size: 9, weight: .semibold, design: .monospaced))
+                            .foregroundStyle(.primary.opacity(0.28))
+                        if loading {
+                            ProgressView().tint(template.colorData.value)
+                                .frame(height: 28)
+                        } else if currentHK > 0 {
+                            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                                Text(String(format: "%.1f", currentHK))
+                                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                                    .foregroundStyle(template.colorData.value)
+                                Text(template.unitLabel)
+                                    .font(.system(size: 14))
+                                    .foregroundStyle(.primary.opacity(0.5))
+                            }
+                            Text("This will be your starting point")
+                                .font(.system(size: 11))
+                                .foregroundStyle(.primary.opacity(0.35))
+                        } else {
+                            Text("No data yet — will update when Apple Health has a reading")
+                                .font(.system(size: 12))
+                                .foregroundStyle(.primary.opacity(0.35))
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 20)
+                        }
+                    }
+                    .padding(.vertical, 16)
+                    .frame(maxWidth: .infinity)
+                    .background(Color.appRowFill, in: RoundedRectangle(cornerRadius: 16))
+                    .padding(.horizontal, 24)
+
+                    // Target
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("MY TARGET (\(template.unitLabel.isEmpty ? "value" : template.unitLabel.uppercased()))")
+                            .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                            .foregroundStyle(.primary.opacity(0.3))
+                        HStack {
+                            TextField("Target", text: $targetText)
+                                .keyboardType(.decimalPad)
+                                .font(.system(size: 26, weight: .bold, design: .rounded))
+                                .foregroundStyle(.primary)
+                                .tint(template.colorData.value)
+                                .multilineTextAlignment(.center)
+                            if !template.unitLabel.isEmpty {
+                                Text(template.unitLabel)
+                                    .font(.system(size: 15, weight: .medium))
+                                    .foregroundStyle(.primary.opacity(0.5))
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 16)
+                        .background(Color.appRowFill, in: RoundedRectangle(cornerRadius: 14))
+                        if template.isLowerBetter {
+                            Text("Progress reaches 100% when the reading drops to this value or below.")
+                                .font(.system(size: 12))
+                                .foregroundStyle(.primary.opacity(0.35))
+                        } else {
+                            Text("Progress reaches 100% when the reading climbs to this value or above.")
+                                .font(.system(size: 12))
+                                .foregroundStyle(.primary.opacity(0.35))
+                        }
+                    }
+                    .padding(.horizontal, 24)
+
+                    // Add button
+                    Button {
+                        guard let t = parsedTarget else { return }
+                        onAdd(t, currentHK)
+                        dismiss()
+                    } label: {
+                        Label("Add life goal", systemImage: "plus")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(parsedTarget != nil ? Color.primary : Color.primary.opacity(0.3))
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 52)
+                            .background(
+                                parsedTarget != nil
+                                    ? template.colorData.value.opacity(0.28)
+                                    : Color.appRowFill,
+                                in: RoundedRectangle(cornerRadius: 14)
+                            )
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(parsedTarget == nil)
+                    .padding(.horizontal, 24)
+
+                    Spacer()
+                }
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancel") { dismiss() }
+                        .foregroundStyle(.primary.opacity(0.6))
+                }
+            }
+        }
+        .task {
+            loading = true
+            currentHK = await health.latestValue(for: template)
+            loading = false
+        }
+    }
+}
+
 // MARK: - Add Daily Goal
 
 private struct AddDailyContent: View {
@@ -650,10 +809,12 @@ private struct AddDailyContent: View {
 
 private struct AddLifeContent: View {
     @EnvironmentObject private var store: DataStore
+    @EnvironmentObject private var health: HealthKitManager
 
     private enum Tab: String, CaseIterable {
         case manage      = "Wheel"
         case suggestions = "Suggestions"
+        case healthKit   = "Health"
         case custom      = "Custom"
     }
 
@@ -664,10 +825,12 @@ private struct AddLifeContent: View {
         "person.2.fill","leaf","dumbbell.fill","cross.fill","airplane","mountain.2.fill"
     ]
 
-    @State private var tab: Tab         = .manage
-    @State private var customName       = ""
-    @State private var customIcon       = "star.fill"
-    @State private var flash: String?   = nil
+    @State private var tab: Tab                              = .manage
+    @State private var customName                            = ""
+    @State private var customIcon                            = "star.fill"
+    @State private var flash: String?                        = nil
+    @State private var loadingHealth                         = false
+    @State private var configuringHKTemplate: HealthMetricTemplate? = nil
 
     var body: some View {
         VStack(spacing: 0) {
@@ -677,6 +840,7 @@ private struct AddLifeContent: View {
             Group {
                 if tab == .manage      { manageTab }
                 if tab == .suggestions { suggestionsTab }
+                if tab == .healthKit   { lifeHealthTab }
                 if tab == .custom      { customTab }
             }
             .animation(.easeInOut(duration: 0.18), value: tab)
@@ -687,6 +851,19 @@ private struct AddLifeContent: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                     .padding(.bottom, 8)
             }
+        }
+        .task(id: tab) {
+            if tab == .healthKit && !health.isAuthorized {
+                loadingHealth = true
+                await health.requestAuthorization()
+                loadingHealth = false
+            }
+        }
+        .sheet(item: $configuringHKTemplate) { template in
+            HKLifeGoalConfigSheet(template: template) { target, startValue in
+                addHealthLifeGoal(template: template, target: target, startValue: startValue)
+            }
+            .presentationDetents([.medium])
         }
     }
 
@@ -858,6 +1035,142 @@ private struct AddLifeContent: View {
         }
         .buttonStyle(.plain)
         .animation(.spring(response: 0.25), value: onWheel)
+    }
+
+    // MARK: Life Health tab
+
+    private var lifeHealthTab: some View {
+        Group {
+            if !health.isAvailable {
+                centeredNote("Apple Health is not available on this device.")
+            } else if loadingHealth {
+                VStack { Spacer(); ProgressView().tint(.primary.opacity(0.4)); Spacer() }
+            } else {
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 20) {
+                        ForEach(lifeHealthCategories, id: \.self) { cat in
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text(cat.uppercased())
+                                    .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                                    .foregroundStyle(.primary.opacity(0.3))
+                                    .padding(.leading, 4)
+                                VStack(spacing: 1) {
+                                    ForEach(HealthMetricTemplate.all.filter { $0.category == cat }) { template in
+                                        lifeHealthRow(template)
+                                    }
+                                }
+                                .background(Color.appRowFill.opacity(0.7), in: RoundedRectangle(cornerRadius: 16))
+                            }
+                        }
+                        Text("Health metrics added as Life Goals track your long-term progress and build a history graph over time.")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.primary.opacity(0.3))
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 8)
+                            .padding(.top, 4)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 20)
+                }
+            }
+        }
+    }
+
+    private var lifeHealthCategories: [String] {
+        var seen = Set<String>()
+        return HealthMetricTemplate.all.compactMap { t in
+            seen.insert(t.category).inserted ? t.category : nil
+        }
+    }
+
+    @ViewBuilder
+    private func lifeHealthRow(_ template: HealthMetricTemplate) -> some View {
+        let existing  = store.lifeGoals.first { $0.healthKitIdentifier == template.id }
+        let onWheel   = existing?.isActive == true
+        let offWheel  = existing != nil && existing?.isActive == false
+
+        Button {
+            if let idx = store.lifeGoals.firstIndex(where: { $0.healthKitIdentifier == template.id }) {
+                withAnimation(.spring(response: 0.3)) {
+                    store.lifeGoals[idx].isActive.toggle()
+                }
+                if store.lifeGoals[idx].isActive { showFlash(template.name) }
+            } else {
+                configuringHKTemplate = template
+            }
+        } label: {
+            HStack(spacing: 14) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 9)
+                        .fill(template.colorData.value.opacity(onWheel ? 0.2 : 0.07))
+                        .frame(width: 38, height: 38)
+                    Image(systemName: template.icon)
+                        .font(.system(size: 15))
+                        .foregroundStyle(onWheel ? template.colorData.value : .primary.opacity(0.4))
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(template.name)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(onWheel ? Color.primary : Color.primary.opacity(0.55))
+                    Text(onWheel ? "On wheel" : (offWheel ? "Off wheel" : "Metric goal · \(template.unitLabel)"))
+                        .font(.system(size: 11))
+                        .foregroundStyle(onWheel ? template.colorData.value.opacity(0.7)
+                                         : .primary.opacity(0.3))
+                }
+                Spacer()
+                Image(systemName: onWheel ? "checkmark.circle.fill"
+                      : (offWheel ? "minus.circle" : "plus.circle"))
+                    .font(.system(size: 20))
+                    .foregroundStyle(onWheel ? template.colorData.value
+                                     : .primary.opacity(offWheel ? 0.3 : 0.25))
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 11)
+        }
+        .buttonStyle(.plain)
+        .animation(.spring(response: 0.25), value: onWheel)
+    }
+
+    private func addHealthLifeGoal(template: HealthMetricTemplate, target: Double, startValue: Double) {
+        let direction: MetricDirection = template.isLowerBetter ? .lower : .higher
+        let history: [MetricEntry] = startValue > 0
+            ? [MetricEntry(date: Date(), value: startValue)]
+            : []
+        let data = MetricData(
+            unit:         template.unitLabel,
+            direction:    direction,
+            startValue:   startValue > 0 ? startValue : target,
+            currentValue: startValue > 0 ? startValue : target,
+            targetValue:  target,
+            history:      history
+        )
+        let color = GoalColor.next(avoiding: store.lifeGoals.map(\.colorData))
+        let goal = LifeGoal(
+            name:                template.name,
+            colorData:           color,
+            icon:                template.icon,
+            kind:                .metric(data),
+            isActive:            true,
+            healthKitIdentifier: template.id
+        )
+        store.lifeGoals.append(goal)
+        showFlash(template.name)
+    }
+
+    private func centeredNote(_ text: String) -> some View {
+        VStack(spacing: 12) {
+            Spacer()
+            Image(systemName: "heart.text.clipboard")
+                .font(.system(size: 36))
+                .foregroundStyle(.primary.opacity(0.2))
+            Text(text)
+                .font(.system(size: 14))
+                .foregroundStyle(.primary.opacity(0.35))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+            Spacer()
+        }
+        .frame(minHeight: 200)
     }
 
     // MARK: Custom

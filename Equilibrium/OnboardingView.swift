@@ -712,13 +712,17 @@ private struct LifeGoalPickerStep: View {
     let onNext: () -> Void
     let onBack: () -> Void
 
-    @State private var selectedIDs = Set<UUID>()
+    @EnvironmentObject private var health: HealthKitManager
+
+    @State private var selectedIDs    = Set<UUID>()
     @State private var customName     = ""
     @State private var customIcon     = "star.fill"
     @State private var tab: LifeTab   = .suggestions
+    @State private var loadingHealth  = false
 
     private enum LifeTab: String, CaseIterable {
         case suggestions = "Suggestions"
+        case healthKit   = "Health"
         case custom      = "Custom"
     }
 
@@ -768,7 +772,8 @@ private struct LifeGoalPickerStep: View {
 
             Group {
                 if tab == .suggestions { suggestionsTab }
-                else                   { customTab }
+                else if tab == .healthKit { lifeHealthTab }
+                else { customTab }
             }
             .animation(.easeInOut(duration: 0.18), value: tab)
             .frame(maxHeight: .infinity)
@@ -853,6 +858,126 @@ private struct LifeGoalPickerStep: View {
         }
         .buttonStyle(.plain)
         .animation(.spring(response: 0.25), value: isSelected)
+    }
+
+    // MARK: Life Health tab (onboarding)
+
+    private var lifeHealthTab: some View {
+        Group {
+            if !health.isAvailable {
+                VStack(spacing: 12) {
+                    Spacer()
+                    Text("Apple Health is not available on this device.")
+                        .font(.system(size: 14))
+                        .foregroundStyle(.primary.opacity(0.4))
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 32)
+                    Spacer()
+                }
+            } else if loadingHealth {
+                VStack { Spacer(); ProgressView().tint(.primary.opacity(0.4)); Spacer() }
+            } else {
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 20) {
+                        ForEach(lifeHealthCategories, id: \.self) { cat in
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text(cat.uppercased())
+                                    .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                                    .foregroundStyle(.primary.opacity(0.3))
+                                    .padding(.leading, 4)
+                                VStack(spacing: 1) {
+                                    ForEach(HealthMetricTemplate.all.filter { $0.category == cat }) { template in
+                                        onboardingLifeHealthRow(template)
+                                    }
+                                }
+                                .background(Color.appRowFill.opacity(0.7), in: RoundedRectangle(cornerRadius: 16))
+                            }
+                        }
+                        Text("You can set specific targets from each goal's detail page after setup.")
+                            .font(.system(size: 12))
+                            .foregroundStyle(.primary.opacity(0.3))
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 8)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 12)
+                }
+            }
+        }
+        .task(id: tab == .healthKit) {
+            guard tab == .healthKit, !health.isAuthorized else { return }
+            loadingHealth = true
+            await health.requestAuthorization()
+            loadingHealth = false
+        }
+    }
+
+    private var lifeHealthCategories: [String] {
+        var seen = Set<String>()
+        return HealthMetricTemplate.all.compactMap { t in
+            seen.insert(t.category).inserted ? t.category : nil
+        }
+    }
+
+    @ViewBuilder
+    private func onboardingLifeHealthRow(_ template: HealthMetricTemplate) -> some View {
+        let isSelected = pendingLifeGoals.contains { $0.healthKitIdentifier == template.id }
+
+        Button {
+            if isSelected {
+                pendingLifeGoals.removeAll { $0.healthKitIdentifier == template.id }
+            } else {
+                addHealthLifeGoal(template)
+            }
+        } label: {
+            HStack(spacing: 14) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 9)
+                        .fill(template.colorData.value.opacity(isSelected ? 0.2 : 0.07))
+                        .frame(width: 38, height: 38)
+                    Image(systemName: template.icon)
+                        .font(.system(size: 15))
+                        .foregroundStyle(isSelected ? template.colorData.value : .primary.opacity(0.4))
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(template.name)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(isSelected ? Color.primary : Color.primary.opacity(0.55))
+                    Text("Metric · \(template.unitLabel.isEmpty ? "tracked" : template.unitLabel)")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.primary.opacity(0.3))
+                }
+                Spacer()
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "plus.circle")
+                    .font(.system(size: 20))
+                    .foregroundStyle(isSelected ? template.colorData.value : .primary.opacity(0.25))
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 11)
+        }
+        .buttonStyle(.plain)
+        .animation(.spring(response: 0.25), value: isSelected)
+    }
+
+    private func addHealthLifeGoal(_ template: HealthMetricTemplate) {
+        let direction: MetricDirection = template.isLowerBetter ? .lower : .higher
+        let color = GoalColor.next(avoiding: pendingLifeGoals.map(\.colorData))
+        let data = MetricData(
+            unit:         template.unitLabel,
+            direction:    direction,
+            startValue:   template.defaultTarget,
+            currentValue: template.defaultTarget,
+            targetValue:  template.defaultTarget,
+            history:      []
+        )
+        pendingLifeGoals.append(LifeGoal(
+            name:                template.name,
+            colorData:           color,
+            icon:                template.icon,
+            kind:                .metric(data),
+            isActive:            true,
+            healthKitIdentifier: template.id
+        ))
     }
 
     // MARK: Custom

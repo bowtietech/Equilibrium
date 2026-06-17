@@ -88,9 +88,17 @@ struct ContentView: View {
             }
             navigateToDetail = false
         }
-        .task { await health.refresh(goals: store.goals) }
+        .task {
+            await health.refresh(goals: store.goals)
+            await applyLifeGoalHealthUpdates()
+        }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active { Task { await health.refresh(goals: store.goals) } }
+            if phase == .active {
+                Task {
+                    await health.refresh(goals: store.goals)
+                    await applyLifeGoalHealthUpdates()
+                }
+            }
         }
         .onChange(of: store.goals) { _, goals in
             let activeCount = goals.filter(\.isActive).count
@@ -414,6 +422,27 @@ struct ContentView: View {
     }
 
     // MARK: - Helpers
+
+    /// Fetches the latest HealthKit value for every health-backed life goal and
+    /// updates `store.lifeGoals[n].kind.metric.currentValue` (plus appends to history
+    /// once per day).
+    @MainActor
+    private func applyLifeGoalHealthUpdates() async {
+        let updates = await health.latestLifeGoalValues(for: store.lifeGoals)
+        guard !updates.isEmpty else { return }
+        let today = Calendar.current.startOfDay(for: Date())
+        for (id, value) in updates {
+            guard let idx = store.lifeGoals.firstIndex(where: { $0.id == id }),
+                  case .metric(var data) = store.lifeGoals[idx].kind
+            else { continue }
+            data.currentValue = value
+            let lastDay = data.history.last.map { Calendar.current.startOfDay(for: $0.date) }
+            if lastDay != today {
+                data.history.append(MetricEntry(date: Date(), value: value))
+            }
+            store.lifeGoals[idx].kind = .metric(data)
+        }
+    }
 
     private func ringView(progress: Double, color: Color) -> some View {
         ZStack {

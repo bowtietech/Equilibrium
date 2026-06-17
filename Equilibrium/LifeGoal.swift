@@ -99,6 +99,9 @@ struct LifeGoal: Identifiable, Codable, Equatable {
     var icon: String
     var kind: LifeGoalKind
     var isActive: Bool = true
+    /// When set, the metric's `currentValue` is kept in sync with the most
+    /// recent HealthKit reading for this identifier.
+    var healthKitIdentifier: String? = nil
 
     var color: Color { colorData.value }
 
@@ -121,16 +124,17 @@ struct LifeGoal: Identifiable, Codable, Equatable {
 
 extension LifeGoal {
     enum CodingKeys: String, CodingKey {
-        case id, name, colorData, icon, kind, isActive
+        case id, name, colorData, icon, kind, isActive, healthKitIdentifier
     }
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
-        id        = try c.decode(UUID.self,         forKey: .id)
-        name      = try c.decode(String.self,       forKey: .name)
-        colorData = try c.decode(GoalColor.self,    forKey: .colorData)
-        icon      = try c.decode(String.self,       forKey: .icon)
-        kind      = try c.decode(LifeGoalKind.self, forKey: .kind)
-        isActive  = try c.decodeIfPresent(Bool.self, forKey: .isActive) ?? true
+        id                   = try c.decode(UUID.self,         forKey: .id)
+        name                 = try c.decode(String.self,       forKey: .name)
+        colorData            = try c.decode(GoalColor.self,    forKey: .colorData)
+        icon                 = try c.decode(String.self,       forKey: .icon)
+        kind                 = try c.decode(LifeGoalKind.self, forKey: .kind)
+        isActive             = try c.decodeIfPresent(Bool.self,   forKey: .isActive)             ?? true
+        healthKitIdentifier  = try c.decodeIfPresent(String.self, forKey: .healthKitIdentifier)
     }
 }
 

@@ -265,6 +265,41 @@ final class HealthKitManager: ObservableObject {
         await refresh(goals: goals)
     }
 
+    // MARK: - Life goal refresh
+
+    /// Returns a map of life-goal ID → latest HK value for all health-linked life goals.
+    /// Call this and then apply the results to `store.lifeGoals` on the main actor.
+    func latestLifeGoalValues(for lifeGoals: [LifeGoal]) async -> [UUID: Double] {
+        var result: [UUID: Double] = [:]
+        for goal in lifeGoals {
+            guard
+                let identifier = goal.healthKitIdentifier,
+                let template   = HealthMetricTemplate.find(identifier: identifier)
+            else { continue }
+            let value = await latestValue(for: template)
+            if value > 0 { result[goal.id] = value }
+        }
+        return result
+    }
+
+    /// Fetches the most recent HealthKit value for a template (looks back
+    /// further than today for body metrics like weight/BMI that aren't measured daily).
+    func latestValue(for template: HealthMetricTemplate) async -> Double {
+        guard isAvailable else { return 0 }
+        let raw: Double
+        switch template.queryKind {
+        case .quantitySum(let id, let unit):
+            raw = await sumToday(identifier: id, unit: unit)
+        case .quantityAverage(let id, let unit):
+            raw = await latestSample(identifier: id, unit: unit)
+        case .sleep:
+            raw = await sleepHoursLastNight()
+        case .mindful:
+            raw = await mindfulMinutesToday()
+        }
+        return raw * template.valueScale
+    }
+
     // MARK: - Refresh goal progress
 
     func refresh(goals: [Goal]) async {
@@ -309,6 +344,27 @@ final class HealthKitManager: ObservableObject {
     }
 
     // MARK: - Query helpers
+
+    /// Fetches the single most-recent sample regardless of date (for long-term metrics
+    /// like body weight / BMI that aren't recorded every day).
+    private func latestSample(identifier: HKQuantityTypeIdentifier, unit: HKUnit) async -> Double {
+        guard let type = HKQuantityType.quantityType(forIdentifier: identifier) else { return 0 }
+        let sort = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
+        return await withCheckedContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: type,
+                predicate: nil,
+                limit: 1,
+                sortDescriptors: [sort]
+            ) { _, samples, _ in
+                guard let s = samples?.first as? HKQuantitySample else {
+                    continuation.resume(returning: 0); return
+                }
+                continuation.resume(returning: s.quantity.doubleValue(for: unit))
+            }
+            store.execute(query)
+        }
+    }
 
     private func averageToday(identifier: HKQuantityTypeIdentifier, unit: HKUnit) async -> Double {
         guard let type = HKQuantityType.quantityType(forIdentifier: identifier) else { return 0 }
