@@ -3,18 +3,6 @@ import Supabase
 import AuthenticationServices
 import CryptoKit
 
-// MARK: - Presentation context for ASWebAuthenticationSession
-
-private final class WebAuthContext: NSObject, ASWebAuthenticationPresentationContextProviding {
-    static let shared = WebAuthContext()
-    func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
-        UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .flatMap(\.windows)
-            .first(where: \.isKeyWindow) ?? .init()
-    }
-}
-
 // MARK: - AuthManager
 
 @MainActor
@@ -26,8 +14,6 @@ final class AuthManager: ObservableObject {
     var userId: UUID?         { session?.user.id }
     var userEmail: String?    { session?.user.email }
 
-    // Retained while an in-app OAuth sheet is open
-    private var webSession: ASWebAuthenticationSession?
     // Nonce used for the current Sign in with Apple request
     private var pendingNonce: (raw: String, hashed: String)?
 
@@ -96,30 +82,14 @@ final class AuthManager: ObservableObject {
         }
     }
 
-    // MARK: - OAuth (Google / Facebook) via ASWebAuthenticationSession
+    // MARK: - OAuth (Google / Facebook)
+    // supabase-swift v2 handles ASWebAuthenticationSession internally and returns the Session.
 
     func signInWithOAuth(provider: OAuthProvider) async throws {
-        let authURL = try await supabase.auth.signInWithOAuth(
+        try await supabase.auth.signInWithOAuth(
             provider: provider.supabaseProvider,
             redirectTo: URL(string: "equilibrium://auth-callback")!
         )
-
-        let callbackURL: URL = try await withCheckedThrowingContinuation { continuation in
-            let ws = ASWebAuthenticationSession(
-                url: authURL,
-                callbackURLScheme: "equilibrium"
-            ) { url, error in
-                if let error { continuation.resume(throwing: error); return }
-                if let url   { continuation.resume(returning: url) }
-            }
-            ws.prefersEphemeralWebBrowserSession = false
-            ws.presentationContextProvider = WebAuthContext.shared
-            ws.start()
-            webSession = ws
-        }
-
-        await handle(url: callbackURL)
-        webSession = nil
     }
 
     // MARK: - Deep link handler (email confirmation / OAuth callbacks)
