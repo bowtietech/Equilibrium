@@ -458,7 +458,8 @@ struct ProfileView: View {
         .listRowSeparatorTint(.white.opacity(0.08))
         .confirmationDialog("Reset all goals?", isPresented: $showResetConfirm, titleVisibility: .visible) {
             Button("Reset Goals", role: .destructive) {
-                dismiss()
+                // Don't call dismiss() — RootView will replace ContentView with OnboardingView
+                // when needsOnboarding flips true, which naturally tears down this sheet.
                 store.resetGoals()
             }
             Button("Cancel", role: .cancel) {}

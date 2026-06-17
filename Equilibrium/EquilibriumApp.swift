@@ -29,13 +29,16 @@ struct RootView: View {
             } else if auth.isAuthenticated {
                 if store.needsOnboarding {
                     OnboardingView()
+                        .transition(.opacity)
                 } else {
                     ContentView()
+                        .transition(.opacity)
                 }
             } else {
                 AuthView()
             }
         }
+        .animation(.easeInOut(duration: 0.35), value: store.needsOnboarding)
         // When the user signs in (or session is restored), pull their cloud data
         .onChange(of: auth.session?.user.id) { _, userId in
             store.setUser(userId)
