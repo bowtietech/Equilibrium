@@ -293,25 +293,54 @@ private struct ProjectGoalDetail: View {
             Section {
                 projectHeader.listRowBackground(Color.clear).listRowSeparator(.hidden)
             }
-            // Sub-goals
+
+            // Areas + their children as flat List rows so every level supports swipe-to-delete
             Section {
                 ForEach(subgoalBinding) { $parent in
-                    SubGoalSection(
-                        subgoal: $parent,
-                        color: goal.color,
-                        expandedIDs: $expandedIDs,
-                        onAddChild: {
-                            addParentID = parent.id
-                            showingAdd  = true
+                    // ── Area (parent) row ──────────────────────────────────────────
+                    areaRow($parent)
+                        .listRowBackground(Color.white.opacity(0.05))
+                        .listRowSeparatorTint(.white.opacity(0.07))
+                        .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button(role: .destructive) {
+                                withAnimation {
+                                    subgoalBinding.wrappedValue.removeAll { $0.id == parent.id }
+                                }
+                            } label: { Label("Delete", systemImage: "trash") }
                         }
-                    )
-                    .listRowBackground(Color.white.opacity(0.05))
-                    .listRowSeparatorTint(.white.opacity(0.07))
-                    .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+
+                    // ── Children (shown when area is expanded) ───────────────────
+                    if expandedIDs.contains(parent.id) {
+                        ForEach($parent.children) { $child in
+                            childRow($child, color: goal.color)
+                                .listRowBackground(Color.white.opacity(0.025))
+                                .listRowSeparatorTint(.white.opacity(0.05))
+                                .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
+                                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                    Button(role: .destructive) {
+                                        withAnimation {
+                                            parent.children.removeAll { $0.id == child.id }
+                                        }
+                                    } label: { Label("Delete", systemImage: "trash") }
+                                }
+                                .transition(.asymmetric(
+                                    insertion: .push(from: .top).combined(with: .opacity),
+                                    removal:   .opacity
+                                ))
+                        }
+                    }
                 }
-                .onDelete { subgoalBinding.wrappedValue.remove(atOffsets: $0) }
             } header: {
-                sectionHeader("Areas")
+                HStack {
+                    sectionHeader("Areas")
+                    Spacer()
+                    Text("swipe to delete")
+                        .font(.system(size: 10, design: .monospaced))
+                        .foregroundStyle(.white.opacity(0.18))
+                        .textCase(nil)
+                        .padding(.trailing, 20)
+                }
             }
         }
         .listStyle(.plain)
@@ -326,6 +355,109 @@ private struct ProjectGoalDetail: View {
         }
         .sheet(isPresented: $showingAdd) { addSheet }
     }
+
+    // MARK: Area row
+
+    private func areaRow(_ parent: Binding<SubGoal>) -> some View {
+        let sub = parent.wrappedValue
+        let isExpanded = expandedIDs.contains(sub.id)
+        return HStack(spacing: 14) {
+            ZStack {
+                Circle().stroke(goal.color.opacity(0.2), lineWidth: 4)
+                Circle()
+                    .trim(from: 0, to: sub.progress)
+                    .stroke(goal.color, style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                    .animation(.spring(response: 0.4), value: sub.progress)
+            }
+            .frame(width: 30, height: 30)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(sub.name)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.9))
+                let done  = sub.children.filter(\.isComplete).count
+                let total = sub.children.count
+                if total > 0 {
+                    Text("\(done)/\(total) · \(Int(sub.progress * 100))%")
+                        .font(.system(size: 11, design: .monospaced))
+                        .foregroundStyle(goal.color.opacity(0.6))
+                }
+            }
+
+            Spacer()
+
+            // Add sub-goal button
+            Button {
+                addParentID = sub.id
+                showingAdd  = true
+            } label: {
+                Image(systemName: "plus")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(goal.color.opacity(0.6))
+                    .frame(width: 28, height: 28)
+                    .background(goal.color.opacity(0.1))
+                    .clipShape(Circle())
+            }
+            .buttonStyle(.plain)
+
+            // Expand/collapse
+            if !sub.children.isEmpty {
+                Button {
+                    withAnimation(.spring(response: 0.28)) {
+                        if isExpanded { expandedIDs.remove(sub.id) }
+                        else          { expandedIDs.insert(sub.id) }
+                    }
+                } label: {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.35))
+                        .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .contentShape(Rectangle())
+    }
+
+    // MARK: Child row
+
+    private func childRow(_ child: Binding<SubGoal>, color: Color) -> some View {
+        let c = child.wrappedValue
+        return HStack(spacing: 12) {
+            // Indent accent
+            Rectangle()
+                .fill(color.opacity(0.22))
+                .frame(width: 2, height: 28)
+                .padding(.leading, 24)
+
+            Button {
+                withAnimation(.spring(response: 0.25)) {
+                    child.isComplete.wrappedValue.toggle()
+                }
+            } label: {
+                Image(systemName: c.isComplete ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 20))
+                    .foregroundStyle(c.isComplete ? color : .white.opacity(0.28))
+                    .animation(.spring(response: 0.2), value: c.isComplete)
+            }
+            .buttonStyle(.plain)
+
+            Text(c.name)
+                .font(.system(size: 14))
+                .foregroundStyle(c.isComplete ? .white.opacity(0.35) : .white.opacity(0.82))
+                .strikethrough(c.isComplete, color: .white.opacity(0.2))
+
+            Spacer()
+        }
+        .padding(.vertical, 10)
+        .padding(.trailing, 16)
+        .contentShape(Rectangle())
+    }
+
+    // MARK: Header & Add sheet
 
     private var projectHeader: some View {
         VStack(spacing: 20) {
@@ -396,118 +528,6 @@ private struct ProjectGoalDetail: View {
         .presentationDetents([.height(260)])
         .presentationBackground(Color(red: 0.08, green: 0.08, blue: 0.13))
         .presentationCornerRadius(24)
-    }
-}
-
-// MARK: - SubGoal Section (expandable, 2 levels shown)
-
-private struct SubGoalSection: View {
-    @Binding var subgoal: SubGoal
-    let color: Color
-    @Binding var expandedIDs: Set<UUID>
-    let onAddChild: () -> Void
-
-    private var isExpanded: Bool { expandedIDs.contains(subgoal.id) }
-
-    var body: some View {
-        VStack(spacing: 0) {
-            // Parent row
-            HStack(spacing: 14) {
-                // Mini ring
-                ZStack {
-                    Circle().stroke(color.opacity(0.2), lineWidth: 4)
-                    Circle()
-                        .trim(from: 0, to: subgoal.progress)
-                        .stroke(color, style: StrokeStyle(lineWidth: 4, lineCap: .round))
-                        .rotationEffect(.degrees(-90))
-                        .animation(.spring(response: 0.4), value: subgoal.progress)
-                }
-                .frame(width: 30, height: 30)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(subgoal.name)
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.9))
-                    let done  = subgoal.children.filter { $0.isComplete }.count
-                    let total = subgoal.children.count
-                    if total > 0 {
-                        Text("\(done)/\(total) · \(Int(subgoal.progress * 100))%")
-                            .font(.system(size: 11, design: .monospaced))
-                            .foregroundStyle(color.opacity(0.6))
-                    }
-                }
-
-                Spacer()
-
-                // Add child button
-                Button(action: onAddChild) {
-                    Image(systemName: "plus")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(color.opacity(0.6))
-                        .frame(width: 28, height: 28)
-                        .background(color.opacity(0.1))
-                        .clipShape(Circle())
-                }
-                .buttonStyle(.plain)
-
-                // Expand toggle
-                if !subgoal.children.isEmpty {
-                    Button {
-                        withAnimation(.spring(response: 0.28)) {
-                            if isExpanded { expandedIDs.remove(subgoal.id) }
-                            else          { expandedIDs.insert(subgoal.id) }
-                        }
-                    } label: {
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.35))
-                            .rotationEffect(.degrees(isExpanded ? 90 : 0))
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
-
-            // Children
-            if isExpanded {
-                ForEach($subgoal.children) { $child in
-                    HStack(spacing: 14) {
-                        // Indent line
-                        Rectangle()
-                            .fill(color.opacity(0.25))
-                            .frame(width: 1)
-                            .padding(.leading, 22)
-
-                        Button {
-                            withAnimation(.spring(response: 0.25)) {
-                                child.isComplete.toggle()
-                            }
-                        } label: {
-                            Image(systemName: child.isComplete ? "checkmark.circle.fill" : "circle")
-                                .font(.system(size: 20))
-                                .foregroundStyle(child.isComplete ? color : .white.opacity(0.28))
-                                .animation(.spring(response: 0.2), value: child.isComplete)
-                        }
-                        .buttonStyle(.plain)
-
-                        Text(child.name)
-                            .font(.system(size: 14))
-                            .foregroundStyle(child.isComplete ? .white.opacity(0.35) : .white.opacity(0.85))
-                            .strikethrough(child.isComplete, color: .white.opacity(0.2))
-
-                        Spacer()
-                    }
-                    .padding(.vertical, 10)
-                    .padding(.trailing, 16)
-                    .background(Color.white.opacity(0.03))
-                    .transition(.asymmetric(
-                        insertion: .push(from: .top).combined(with: .opacity),
-                        removal:   .opacity
-                    ))
-                }
-            }
-        }
     }
 }
 
