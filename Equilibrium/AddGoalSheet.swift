@@ -169,9 +169,6 @@ private struct AddDailyContent: View {
         case custom      = "Custom"
     }
 
-    private static let colorPalette: [GoalColor] = [
-        .purple, .orange, .green, .cyan, .pink, .indigo, .teal, .gold, .rose, .violet, .blue, .amber
-    ]
     private static let iconOptions = [
         "star.fill","heart.fill","brain.head.profile","figure.run","moon.fill","leaf",
         "drop","flame.fill","book.fill","music.note","paintbrush.fill","laptopcomputer",
@@ -185,7 +182,6 @@ private struct AddDailyContent: View {
     @State private var loadingHealth  = false
     @State private var customName     = ""
     @State private var customIcon     = "star.fill"
-    @State private var customColorIdx = 0
     @State private var flash: String? = nil
     @State private var configuringHKTemplate: HealthMetricTemplate? = nil
 
@@ -511,7 +507,8 @@ private struct AddDailyContent: View {
     // MARK: Custom tab
 
     private var customTab: some View {
-        ScrollView(showsIndicators: false) {
+        let autoColor = GoalColor.next(avoiding: store.goals.map(\.colorData))
+        return ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
                 fieldLabel("Goal name")
                 TextField("e.g. Morning Routine", text: $customName)
@@ -521,24 +518,6 @@ private struct AddDailyContent: View {
                     .padding(14)
                     .background(.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 12))
 
-                fieldLabel("Color")
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 10) {
-                        ForEach(Self.colorPalette.indices, id: \.self) { i in
-                            Circle()
-                                .fill(Self.colorPalette[i].value)
-                                .frame(width: 34, height: 34)
-                                .overlay(Circle()
-                                    .stroke(.white.opacity(customColorIdx == i ? 0.9 : 0),
-                                            lineWidth: 2.5)
-                                    .padding(-3))
-                                .onTapGesture { customColorIdx = i }
-                                .animation(.spring(response: 0.25), value: customColorIdx)
-                        }
-                    }
-                    .padding(.horizontal, 2)
-                }
-
                 fieldLabel("Icon")
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: 10) {
                     ForEach(Self.iconOptions, id: \.self) { sym in
@@ -546,13 +525,13 @@ private struct AddDailyContent: View {
                             Image(systemName: sym)
                                 .font(.system(size: 17))
                                 .foregroundStyle(customIcon == sym
-                                                 ? Self.colorPalette[customColorIdx].value
+                                                 ? autoColor.value
                                                  : .white.opacity(0.4))
                                 .frame(width: 40, height: 40)
                                 .background(
                                     RoundedRectangle(cornerRadius: 10)
                                         .fill(customIcon == sym
-                                              ? Self.colorPalette[customColorIdx].value.opacity(0.18)
+                                              ? autoColor.value.opacity(0.18)
                                               : Color.white.opacity(0.05))
                                 )
                         }
@@ -564,13 +543,13 @@ private struct AddDailyContent: View {
                 Button {
                     let trimmed = customName.trimmingCharacters(in: .whitespaces)
                     guard !trimmed.isEmpty else { return }
+                    let color = GoalColor.next(avoiding: store.goals.map(\.colorData))
                     store.goals.append(
-                        Goal(name: trimmed,
-                             colorData: Self.colorPalette[customColorIdx],
-                             icon: customIcon, items: [])
+                        Goal(name: trimmed, colorData: color, icon: customIcon, items: [])
                     )
                     showFlash(trimmed)
                     customName = ""
+                    customIcon = "star.fill"
                 } label: {
                     Label("Add goal", systemImage: "plus")
                         .font(.system(size: 14, weight: .semibold))
@@ -578,9 +557,7 @@ private struct AddDailyContent: View {
                         .frame(maxWidth: .infinity)
                         .frame(height: 48)
                         .background(
-                            canAdd
-                                ? Self.colorPalette[customColorIdx].value.opacity(0.28)
-                                : Color.white.opacity(0.06),
+                            canAdd ? autoColor.value.opacity(0.28) : Color.white.opacity(0.06),
                             in: RoundedRectangle(cornerRadius: 12)
                         )
                 }
@@ -680,9 +657,6 @@ private struct AddLifeContent: View {
         case custom      = "Custom"
     }
 
-    private static let colorPalette: [GoalColor] = [
-        .purple, .orange, .green, .cyan, .pink, .indigo, .teal, .gold, .rose, .violet, .blue, .amber
-    ]
     private static let iconOptions = [
         "star.fill","heart.fill","trophy.fill","rocket.fill","book.fill","graduationcap.fill",
         "house.fill","briefcase.fill","dollarsign.circle.fill","creditcard.fill","chart.line.uptrend.xyaxis",
@@ -693,7 +667,6 @@ private struct AddLifeContent: View {
     @State private var tab: Tab         = .manage
     @State private var customName       = ""
     @State private var customIcon       = "star.fill"
-    @State private var customColorIdx   = 0
     @State private var flash: String?   = nil
 
     var body: some View {
@@ -890,7 +863,8 @@ private struct AddLifeContent: View {
     // MARK: Custom
 
     private var customTab: some View {
-        ScrollView(showsIndicators: false) {
+        let autoColor = GoalColor.next(avoiding: store.lifeGoals.map(\.colorData))
+        return ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
                 fieldLabel("Goal name")
                 TextField("e.g. Build my dream home", text: $customName)
@@ -898,33 +872,18 @@ private struct AddLifeContent: View {
                     .padding(14)
                     .background(.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 12))
 
-                fieldLabel("Color")
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 10) {
-                        ForEach(Self.colorPalette.indices, id: \.self) { i in
-                            Circle().fill(Self.colorPalette[i].value).frame(width: 34, height: 34)
-                                .overlay(Circle()
-                                    .stroke(.white.opacity(customColorIdx == i ? 0.9 : 0),
-                                            lineWidth: 2.5)
-                                    .padding(-3))
-                                .onTapGesture { customColorIdx = i }
-                                .animation(.spring(response: 0.25), value: customColorIdx)
-                        }
-                    }.padding(.horizontal, 2)
-                }
-
                 fieldLabel("Icon")
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: 10) {
                     ForEach(Self.iconOptions, id: \.self) { sym in
                         Button { customIcon = sym } label: {
                             Image(systemName: sym).font(.system(size: 17))
                                 .foregroundStyle(customIcon == sym
-                                                 ? Self.colorPalette[customColorIdx].value
+                                                 ? autoColor.value
                                                  : .white.opacity(0.4))
                                 .frame(width: 40, height: 40)
                                 .background(RoundedRectangle(cornerRadius: 10)
                                     .fill(customIcon == sym
-                                          ? Self.colorPalette[customColorIdx].value.opacity(0.18)
+                                          ? autoColor.value.opacity(0.18)
                                           : Color.white.opacity(0.05)))
                         }.buttonStyle(.plain)
                     }
@@ -934,22 +893,20 @@ private struct AddLifeContent: View {
                 Button {
                     let trimmed = customName.trimmingCharacters(in: .whitespaces)
                     guard !trimmed.isEmpty else { return }
+                    let color = GoalColor.next(avoiding: store.lifeGoals.map(\.colorData))
                     store.lifeGoals.append(
-                        LifeGoal(name: trimmed,
-                                 colorData: Self.colorPalette[customColorIdx],
-                                 icon: customIcon, kind: .project([]))
+                        LifeGoal(name: trimmed, colorData: color, icon: customIcon, kind: .project([]))
                     )
                     showFlash(trimmed)
                     customName = ""
+                    customIcon = "star.fill"
                 } label: {
                     Label("Add life goal", systemImage: "plus")
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(canAdd ? .white : .white.opacity(0.25))
                         .frame(maxWidth: .infinity).frame(height: 48)
                         .background(
-                            canAdd
-                                ? Self.colorPalette[customColorIdx].value.opacity(0.28)
-                                : Color.white.opacity(0.06),
+                            canAdd ? autoColor.value.opacity(0.28) : Color.white.opacity(0.06),
                             in: RoundedRectangle(cornerRadius: 12))
                 }
                 .buttonStyle(.plain)

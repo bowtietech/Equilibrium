@@ -308,7 +308,6 @@ private struct PickerStep: View {
     @State private var healthValues: [String: Double] = [:]
     @State private var customName     = ""
     @State private var customIcon     = "star.fill"
-    @State private var customColorIdx = 0
     @State private var loadingHealth  = false
 
     private enum PickerTab: String, CaseIterable {
@@ -316,10 +315,6 @@ private struct PickerStep: View {
         case health      = "Health"
         case custom      = "Custom"
     }
-
-    private static let colorPalette: [GoalColor] = [
-        .purple, .orange, .green, .cyan, .pink, .indigo, .teal, .gold, .rose, .violet, .blue, .amber
-    ]
 
     private static let iconOptions = [
         "star.fill","heart.fill","brain.head.profile","figure.run","moon.fill","leaf",
@@ -548,26 +543,8 @@ private struct PickerStep: View {
                         .background(.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 12))
                 }
 
-                // Color
-                VStack(alignment: .leading, spacing: 8) {
-                    label("Color")
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 10) {
-                            ForEach(Self.colorPalette.indices, id: \.self) { i in
-                                let col = Self.colorPalette[i]
-                                Circle()
-                                    .fill(col.value)
-                                    .frame(width: 34, height: 34)
-                                    .overlay(Circle().stroke(.white.opacity(customColorIdx == i ? 0.9 : 0), lineWidth: 2.5).padding(-3))
-                                    .onTapGesture { customColorIdx = i }
-                                    .animation(.spring(response: 0.25), value: customColorIdx)
-                            }
-                        }
-                        .padding(.horizontal, 2)
-                    }
-                }
-
                 // Icon
+                let autoColor = GoalColor.next(avoiding: pendingGoals.map(\.colorData))
                 VStack(alignment: .leading, spacing: 8) {
                     label("Icon")
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: 10) {
@@ -576,13 +553,13 @@ private struct PickerStep: View {
                                 Image(systemName: sym)
                                     .font(.system(size: 17))
                                     .foregroundStyle(customIcon == sym
-                                                     ? Self.colorPalette[customColorIdx].value
+                                                     ? autoColor.value
                                                      : .white.opacity(0.4))
                                     .frame(width: 40, height: 40)
                                     .background(
                                         RoundedRectangle(cornerRadius: 10)
                                             .fill(customIcon == sym
-                                                  ? Self.colorPalette[customColorIdx].value.opacity(0.18)
+                                                  ? autoColor.value.opacity(0.18)
                                                   : Color.white.opacity(0.05))
                                     )
                             }
@@ -592,22 +569,20 @@ private struct PickerStep: View {
                 }
 
                 // Add button
+                let canAdd = !customName.trimmingCharacters(in: .whitespaces).isEmpty
                 Button { addCustomGoal() } label: {
                     Label("Add goal", systemImage: "plus")
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(customName.trimmingCharacters(in: .whitespaces).isEmpty
-                                         ? .white.opacity(0.25) : .white)
+                        .foregroundStyle(canAdd ? .white : .white.opacity(0.25))
                         .frame(maxWidth: .infinity)
                         .frame(height: 48)
                         .background(
-                            customName.trimmingCharacters(in: .whitespaces).isEmpty
-                            ? Color.white.opacity(0.06)
-                            : Self.colorPalette[customColorIdx].value.opacity(0.28),
+                            canAdd ? autoColor.value.opacity(0.28) : Color.white.opacity(0.06),
                             in: RoundedRectangle(cornerRadius: 12)
                         )
                 }
                 .buttonStyle(.plain)
-                .disabled(customName.trimmingCharacters(in: .whitespaces).isEmpty)
+                .disabled(!canAdd)
             }
             .padding(.horizontal, 24)
             .padding(.bottom, 12)
@@ -675,10 +650,11 @@ private struct PickerStep: View {
     private func addCustomGoal() {
         let trimmed = customName.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return }
-        let goal = Goal(name: trimmed, colorData: Self.colorPalette[customColorIdx],
-                        icon: customIcon, items: [])
+        let color = GoalColor.next(avoiding: pendingGoals.map(\.colorData))
+        let goal  = Goal(name: trimmed, colorData: color, icon: customIcon, items: [])
         pendingGoals.append(goal)
         customName = ""
+        customIcon = "star.fill"
     }
 
     private func removeGoal(_ goal: Goal) {
@@ -739,7 +715,6 @@ private struct LifeGoalPickerStep: View {
     @State private var selectedIDs = Set<UUID>()
     @State private var customName     = ""
     @State private var customIcon     = "star.fill"
-    @State private var customColorIdx = 0
     @State private var tab: LifeTab   = .suggestions
 
     private enum LifeTab: String, CaseIterable {
@@ -883,7 +858,9 @@ private struct LifeGoalPickerStep: View {
     // MARK: Custom
 
     private var customTab: some View {
-        ScrollView(showsIndicators: false) {
+        let autoColor = GoalColor.next(avoiding: pendingLifeGoals.map(\.colorData))
+        let canAdd    = !customName.trimmingCharacters(in: .whitespaces).isEmpty
+        return ScrollView(showsIndicators: false) {
             VStack(spacing: 20) {
                 VStack(alignment: .leading, spacing: 8) {
                     sectionLabel("Goal name")
@@ -893,28 +870,15 @@ private struct LifeGoalPickerStep: View {
                         .background(.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 12))
                 }
                 VStack(alignment: .leading, spacing: 8) {
-                    sectionLabel("Color")
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 10) {
-                            ForEach(Self.colorPalette.indices, id: \.self) { i in
-                                Circle().fill(Self.colorPalette[i].value).frame(width: 34, height: 34)
-                                    .overlay(Circle().stroke(.white.opacity(customColorIdx == i ? 0.9 : 0), lineWidth: 2.5).padding(-3))
-                                    .onTapGesture { customColorIdx = i }
-                                    .animation(.spring(response: 0.25), value: customColorIdx)
-                            }
-                        }.padding(.horizontal, 2)
-                    }
-                }
-                VStack(alignment: .leading, spacing: 8) {
                     sectionLabel("Icon")
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: 10) {
                         ForEach(Self.iconOptions, id: \.self) { sym in
                             Button { customIcon = sym } label: {
                                 Image(systemName: sym).font(.system(size: 17))
-                                    .foregroundStyle(customIcon == sym ? Self.colorPalette[customColorIdx].value : .white.opacity(0.4))
+                                    .foregroundStyle(customIcon == sym ? autoColor.value : .white.opacity(0.4))
                                     .frame(width: 40, height: 40)
                                     .background(RoundedRectangle(cornerRadius: 10)
-                                        .fill(customIcon == sym ? Self.colorPalette[customColorIdx].value.opacity(0.18) : Color.white.opacity(0.05)))
+                                        .fill(customIcon == sym ? autoColor.value.opacity(0.18) : Color.white.opacity(0.05)))
                             }.buttonStyle(.plain)
                         }
                     }
@@ -922,16 +886,14 @@ private struct LifeGoalPickerStep: View {
                 Button { addCustom() } label: {
                     Label("Add life goal", systemImage: "plus")
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(customName.trimmingCharacters(in: .whitespaces).isEmpty ? .white.opacity(0.25) : .white)
+                        .foregroundStyle(canAdd ? .white : .white.opacity(0.25))
                         .frame(maxWidth: .infinity).frame(height: 48)
                         .background(
-                            customName.trimmingCharacters(in: .whitespaces).isEmpty
-                                ? Color.white.opacity(0.06)
-                                : Self.colorPalette[customColorIdx].value.opacity(0.28),
+                            canAdd ? autoColor.value.opacity(0.28) : Color.white.opacity(0.06),
                             in: RoundedRectangle(cornerRadius: 12))
                 }
                 .buttonStyle(.plain)
-                .disabled(customName.trimmingCharacters(in: .whitespaces).isEmpty)
+                .disabled(!canAdd)
             }
             .padding(.horizontal, 24).padding(.bottom, 12)
         }
@@ -972,11 +934,12 @@ private struct LifeGoalPickerStep: View {
     private func addCustom() {
         let name = customName.trimmingCharacters(in: .whitespaces)
         guard !name.isEmpty else { return }
+        let color = GoalColor.next(avoiding: pendingLifeGoals.map(\.colorData))
         pendingLifeGoals.append(
-            LifeGoal(name: name, colorData: Self.colorPalette[customColorIdx],
-                     icon: customIcon, kind: .project([]))
+            LifeGoal(name: name, colorData: color, icon: customIcon, kind: .project([]))
         )
         customName = ""
+        customIcon = "star.fill"
     }
 
     private func sectionLabel(_ text: String) -> some View {

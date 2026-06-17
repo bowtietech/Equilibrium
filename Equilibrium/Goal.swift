@@ -22,6 +22,27 @@ struct GoalColor: Codable, Equatable {
     static let amber  = GoalColor(1.00, 0.52, 0.18)
     static let violet = GoalColor(0.75, 0.30, 0.95)
     static let rose   = GoalColor(0.95, 0.25, 0.60)
+
+    /// All distinct colors in display order.
+    static let palette: [GoalColor] = [
+        .purple, .orange, .green, .cyan, .pink, .indigo,
+        .teal, .gold, .rose, .violet, .blue, .amber
+    ]
+
+    /// Returns the palette color used least often among `existing`.
+    /// Cycles evenly so adjacent goals on the wheel rarely share a hue.
+    static func next(avoiding existing: [GoalColor]) -> GoalColor {
+        // Count usage of each palette entry by index (no Hashable required)
+        var counts = [Int](repeating: 0, count: palette.count)
+        for c in existing {
+            if let idx = palette.firstIndex(of: c) {
+                counts[idx] += 1
+            }
+        }
+        // Pick the index with the lowest count (first in palette order on tie)
+        let bestIdx = counts.indices.min(by: { counts[$0] < counts[$1] }) ?? 0
+        return palette[bestIdx]
+    }
 }
 
 // MARK: - Wheel Display Entry (shared by Daily and Life modes, view-model only)
