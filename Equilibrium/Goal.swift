@@ -132,6 +132,9 @@ struct Goal: Identifiable, Codable, Equatable {
     var colorData: GoalColor
     var icon: String
     var items: [GoalItem]
+    /// When false the goal is hidden from the wheel and excluded from totals,
+    /// but all data is preserved so it can be reactivated later.
+    var isActive: Bool = true
 
     // HealthKit backing — when set, progress comes from HK not items
     var healthKitIdentifier: String?
@@ -162,6 +165,27 @@ struct Goal: Identifiable, Codable, Equatable {
 
     // Legacy convenience kept for non-HK callers
     var wheelEntry: WheelEntry { wheelEntry() }
+}
+
+// MARK: - Backward-compatible Codable for Goal
+
+extension Goal {
+    enum CodingKeys: String, CodingKey {
+        case id, name, colorData, icon, items, isActive
+        case healthKitIdentifier, healthKitTarget, healthKitUnit
+    }
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id        = try c.decode(UUID.self,       forKey: .id)
+        name      = try c.decode(String.self,     forKey: .name)
+        colorData = try c.decode(GoalColor.self,  forKey: .colorData)
+        icon      = try c.decode(String.self,     forKey: .icon)
+        items     = try c.decode([GoalItem].self, forKey: .items)
+        isActive  = try c.decodeIfPresent(Bool.self, forKey: .isActive) ?? true
+        healthKitIdentifier = try c.decodeIfPresent(String.self, forKey: .healthKitIdentifier)
+        healthKitTarget     = try c.decodeIfPresent(Double.self, forKey: .healthKitTarget)
+        healthKitUnit       = try c.decodeIfPresent(String.self, forKey: .healthKitUnit)
+    }
 }
 
 // MARK: - Balance Score

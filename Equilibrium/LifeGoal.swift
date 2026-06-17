@@ -98,6 +98,7 @@ struct LifeGoal: Identifiable, Codable, Equatable {
     var colorData: GoalColor
     var icon: String
     var kind: LifeGoalKind
+    var isActive: Bool = true
 
     var color: Color { colorData.value }
 
@@ -113,6 +114,23 @@ struct LifeGoal: Identifiable, Codable, Equatable {
 
     var wheelEntry: WheelEntry {
         WheelEntry(id: id, name: name, color: color, icon: icon, progress: progress)
+    }
+}
+
+// MARK: - Backward-compatible Codable for LifeGoal
+
+extension LifeGoal {
+    enum CodingKeys: String, CodingKey {
+        case id, name, colorData, icon, kind, isActive
+    }
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id        = try c.decode(UUID.self,         forKey: .id)
+        name      = try c.decode(String.self,       forKey: .name)
+        colorData = try c.decode(GoalColor.self,    forKey: .colorData)
+        icon      = try c.decode(String.self,       forKey: .icon)
+        kind      = try c.decode(LifeGoalKind.self, forKey: .kind)
+        isActive  = try c.decodeIfPresent(Bool.self, forKey: .isActive) ?? true
     }
 }
 

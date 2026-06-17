@@ -28,7 +28,7 @@ struct AddGoalSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Text(mode == .daily ? "add daily goal" : "add life goal")
+                    Text(mode == .daily ? "manage daily goals" : "manage life goals")
                         .font(.system(size: 13, weight: .medium, design: .monospaced))
                         .foregroundStyle(.white.opacity(0.28))
                 }
@@ -42,6 +42,120 @@ struct AddGoalSheet: View {
     }
 }
 
+// MARK: - Health metric target config sheet
+
+private struct HKTargetConfigSheet: View {
+    let template: HealthMetricTemplate
+    var onAdd: (Double) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var targetText: String
+
+    init(template: HealthMetricTemplate, onAdd: @escaping (Double) -> Void) {
+        self.template = template
+        self.onAdd    = onAdd
+        _targetText   = State(initialValue: String(format: "%.0f", template.defaultTarget))
+    }
+
+    private var parsedTarget: Double? {
+        let t = Double(targetText.trimmingCharacters(in: .whitespaces))
+        return (t ?? 0) > 0 ? t : nil
+    }
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Color(red: 0.04, green: 0.04, blue: 0.09).ignoresSafeArea()
+
+                VStack(spacing: 28) {
+                    // Icon + name
+                    VStack(spacing: 10) {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 18)
+                                .fill(template.colorData.value.opacity(0.18))
+                                .frame(width: 64, height: 64)
+                            Image(systemName: template.icon)
+                                .font(.system(size: 28))
+                                .foregroundStyle(template.colorData.value)
+                        }
+                        Text(template.name)
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundStyle(.white)
+                        if template.isLowerBetter {
+                            Text("You'll be at 100% when your reading reaches this value or below.")
+                                .font(.system(size: 13))
+                                .foregroundStyle(.white.opacity(0.45))
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 32)
+                        } else {
+                            Text("Set your daily target for this metric.")
+                                .font(.system(size: 13))
+                                .foregroundStyle(.white.opacity(0.45))
+                                .multilineTextAlignment(.center)
+                        }
+                    }
+
+                    // Target input
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("TARGET (\(template.unitLabel.uppercased()))")
+                            .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                            .foregroundStyle(.white.opacity(0.3))
+
+                        HStack {
+                            TextField("", text: $targetText)
+                                .keyboardType(.decimalPad)
+                                .font(.system(size: 28, weight: .bold, design: .rounded))
+                                .foregroundStyle(.white)
+                                .tint(template.colorData.value)
+                                .multilineTextAlignment(.center)
+                            Text(template.unitLabel)
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundStyle(.white.opacity(0.5))
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 18)
+                        .background(.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 14))
+                    }
+                    .padding(.horizontal, 32)
+
+                    // Add button
+                    Button {
+                        guard let t = parsedTarget else { return }
+                        onAdd(t)
+                        dismiss()
+                    } label: {
+                        Label("Add goal", systemImage: "plus")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(parsedTarget != nil ? .white : .white.opacity(0.3))
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 52)
+                            .background(
+                                parsedTarget != nil
+                                    ? template.colorData.value.opacity(0.28)
+                                    : Color.white.opacity(0.06),
+                                in: RoundedRectangle(cornerRadius: 14)
+                            )
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(parsedTarget == nil)
+                    .padding(.horizontal, 32)
+
+                    Spacer()
+                }
+                .padding(.top, 40)
+            }
+            .preferredColorScheme(.dark)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancel") { dismiss() }
+                        .foregroundStyle(.white.opacity(0.6))
+                }
+            }
+        }
+    }
+}
+
 // MARK: - Add Daily Goal
 
 private struct AddDailyContent: View {
@@ -49,6 +163,7 @@ private struct AddDailyContent: View {
     @EnvironmentObject private var health: HealthKitManager
 
     private enum Tab: String, CaseIterable {
+        case manage      = "Wheel"
         case suggestions = "Suggestions"
         case healthKit   = "Health"
         case custom      = "Custom"
@@ -65,16 +180,14 @@ private struct AddDailyContent: View {
         "trophy.fill","camera.fill","gym.bag.fill","cross.fill","pills.fill"
     ]
 
-    @State private var tab: Tab = .suggestions
-    @State private var addedIDs          = Set<String>()   // names/HK ids added in this session
-    @State private var preExistingNames  = Set<String>()   // goal names already in store on open
-    @State private var preExistingHKIds  = Set<String>()   // HK ids already in store on open
+    @State private var tab: Tab = .manage
     @State private var healthValues: [String: Double] = [:]
     @State private var loadingHealth  = false
     @State private var customName     = ""
     @State private var customIcon     = "star.fill"
     @State private var customColorIdx = 0
     @State private var flash: String? = nil
+    @State private var configuringHKTemplate: HealthMetricTemplate? = nil
 
     var body: some View {
         VStack(spacing: 0) {
@@ -82,6 +195,7 @@ private struct AddDailyContent: View {
                 .padding(.bottom, 12)
 
             Group {
+                if tab == .manage      { manageTab }
                 if tab == .suggestions { suggestionsTab }
                 if tab == .healthKit   { healthTab }
                 if tab == .custom      { customTab }
@@ -95,39 +209,118 @@ private struct AddDailyContent: View {
                     .padding(.bottom, 8)
             }
         }
-        .onAppear {
-            // Snapshot the store so we never remove goals the user already had data in.
-            preExistingNames = Set(store.goals.map { $0.name })
-            preExistingHKIds = Set(store.goals.compactMap { $0.healthKitIdentifier })
-        }
         .task {
             if health.isAvailable && !health.isAuthorized {
                 await health.requestAuthorization()
             }
             await loadHealthValues()
         }
+        .sheet(item: $configuringHKTemplate) { template in
+            HKTargetConfigSheet(template: template) { target in
+                store.goals.append(Goal(
+                    name: template.name, colorData: template.colorData, icon: template.icon,
+                    items: [],
+                    healthKitIdentifier: template.id,
+                    healthKitTarget: target,
+                    healthKitUnit: template.unitLabel
+                ))
+                showFlash(template.name)
+            }
+            .environmentObject(store)
+            .environmentObject(health)
+        }
     }
 
     // MARK: Tab bar
 
     private var tabBar: some View {
-        HStack(spacing: 0) {
-            ForEach(Tab.allCases, id: \.self) { t in
-                Button { withAnimation(.spring(response: 0.3)) { tab = t } } label: {
-                    Text(t.rawValue)
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(tab == t ? .white : .white.opacity(0.35))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
-                        .background(tab == t ? Color.white.opacity(0.12) : Color.clear,
-                                    in: RoundedRectangle(cornerRadius: 10))
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 0) {
+                ForEach(Tab.allCases, id: \.self) { t in
+                    Button { withAnimation(.spring(response: 0.3)) { tab = t } } label: {
+                        Text(t.rawValue)
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(tab == t ? .white : .white.opacity(0.35))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 10)
+                            .padding(.horizontal, 12)
+                            .background(tab == t ? Color.white.opacity(0.12) : Color.clear,
+                                        in: RoundedRectangle(cornerRadius: 10))
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
+            .padding(4)
         }
-        .padding(4)
         .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 14))
         .padding(.horizontal, 24)
+    }
+
+    // MARK: Manage tab
+
+    private var manageTab: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 0) {
+                if store.goals.isEmpty {
+                    emptyManageNote("No daily goals yet. Add some from the other tabs.")
+                } else {
+                    VStack(spacing: 1) {
+                        ForEach($store.goals) { $goal in
+                            manageRow(goal: $goal)
+                        }
+                    }
+                    .background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
+                    .padding(.horizontal, 20)
+                    .padding(.top, 4)
+
+                    Text("Tap to toggle goals on or off the wheel. Their data is always preserved.")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.white.opacity(0.28))
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 32)
+                        .padding(.top, 16)
+                        .padding(.bottom, 8)
+                }
+            }
+            .padding(.bottom, 20)
+        }
+    }
+
+    private func manageRow(goal: Binding<Goal>) -> some View {
+        let g = goal.wrappedValue
+        return Button {
+            withAnimation(.spring(response: 0.3)) {
+                goal.isActive.wrappedValue.toggle()
+            }
+        } label: {
+            HStack(spacing: 14) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 9)
+                        .fill(g.colorData.value.opacity(g.isActive ? 0.2 : 0.07))
+                        .frame(width: 38, height: 38)
+                    Image(systemName: g.icon)
+                        .font(.system(size: 15))
+                        .foregroundStyle(g.isActive ? g.colorData.value : .white.opacity(0.3))
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(g.name)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(g.isActive ? .white : .white.opacity(0.4))
+                    Text(g.isActive ? "On wheel" : "Off wheel")
+                        .font(.system(size: 11))
+                        .foregroundStyle(g.isActive
+                                         ? g.colorData.value.opacity(0.7)
+                                         : .white.opacity(0.22))
+                }
+                Spacer()
+                Image(systemName: g.isActive ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 22))
+                    .foregroundStyle(g.isActive ? g.colorData.value : .white.opacity(0.2))
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: Suggestions tab
@@ -157,17 +350,28 @@ private struct AddDailyContent: View {
 
     @ViewBuilder
     private func suggestionCard(_ sg: SuggestedGoal) -> some View {
-        let isPreExisting    = preExistingNames.contains(sg.name)
-        let isSessionAdded   = addedIDs.contains(sg.name)
-        let alreadyAdded     = isPreExisting || isSessionAdded
+        // A goal is "on wheel" if it exists in the store AND isActive, or if it was added this session
+        let existing    = store.goals.first { $0.name == sg.name }
+        let onWheel     = existing?.isActive == true
+        let offWheel    = existing != nil && existing?.isActive == false
+
         Button {
-            if isSessionAdded {
-                // Only remove goals we added this session — never touch pre-existing data
-                store.goals.removeAll { $0.name == sg.name }
-                addedIDs.remove(sg.name)
-            } else if !isPreExisting {
+            if let idx = store.goals.firstIndex(where: { $0.name == sg.name }) {
+                if store.goals[idx].isActive {
+                    // Already active → toggle off wheel
+                    withAnimation(.spring(response: 0.3)) {
+                        store.goals[idx].isActive = false
+                    }
+                } else {
+                    // Off wheel → bring back
+                    withAnimation(.spring(response: 0.3)) {
+                        store.goals[idx].isActive = true
+                    }
+                    showFlash(sg.name)
+                }
+            } else {
+                // Not in store at all → add
                 store.goals.append(sg.toGoal())
-                addedIDs.insert(sg.name)
                 showFlash(sg.name)
             }
         } label: {
@@ -175,15 +379,17 @@ private struct AddDailyContent: View {
                 HStack {
                     Image(systemName: sg.icon)
                         .font(.system(size: 18))
-                        .foregroundStyle(sg.colorData.value)
+                        .foregroundStyle(onWheel ? sg.colorData.value : .white.opacity(offWheel ? 0.3 : 0.6))
                     Spacer()
-                    Image(systemName: alreadyAdded ? "checkmark.circle.fill" : "plus.circle")
-                        .foregroundStyle(alreadyAdded ? sg.colorData.value : .white.opacity(0.25))
+                    Image(systemName: onWheel ? "checkmark.circle.fill"
+                          : (offWheel ? "minus.circle" : "plus.circle"))
+                        .foregroundStyle(onWheel ? sg.colorData.value
+                                         : (offWheel ? .white.opacity(0.3) : .white.opacity(0.25)))
                         .font(.system(size: 16))
                 }
                 Text(sg.name)
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(onWheel ? .white : .white.opacity(0.55))
                 Text("\(sg.itemNames.count) items")
                     .font(.system(size: 11))
                     .foregroundStyle(.white.opacity(0.35))
@@ -192,18 +398,18 @@ private struct AddDailyContent: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 RoundedRectangle(cornerRadius: 14)
-                    .fill(alreadyAdded
+                    .fill(onWheel
                           ? sg.colorData.value.opacity(0.18)
                           : Color.white.opacity(0.05))
                     .overlay(
                         RoundedRectangle(cornerRadius: 14)
-                            .stroke(alreadyAdded ? sg.colorData.value.opacity(0.5) : Color.clear,
+                            .stroke(onWheel ? sg.colorData.value.opacity(0.5) : Color.clear,
                                     lineWidth: 1)
                     )
             )
         }
         .buttonStyle(.plain)
-        .animation(.spring(response: 0.25), value: alreadyAdded)
+        .animation(.spring(response: 0.25), value: onWheel)
     }
 
     // MARK: Health tab
@@ -230,66 +436,76 @@ private struct AddDailyContent: View {
 
     @ViewBuilder
     private func healthRow(_ template: HealthMetricTemplate) -> some View {
-        let isPreExisting  = preExistingHKIds.contains(template.id)
-        let isSessionAdded = addedIDs.contains(template.id)
-        let alreadyAdded   = isPreExisting || isSessionAdded
-        let value = healthValues[template.id] ?? 0
+        let existing = store.goals.first { $0.healthKitIdentifier == template.id }
+        let onWheel  = existing?.isActive == true
+        let offWheel = existing != nil && existing?.isActive == false
+        let value    = healthValues[template.id] ?? 0
 
         Button {
-            if isSessionAdded {
-                store.goals.removeAll { $0.healthKitIdentifier == template.id }
-                addedIDs.remove(template.id)
-            } else if !isPreExisting {
-                store.goals.append(Goal(
-                    name: template.name, colorData: template.colorData, icon: template.icon,
-                    items: [],
-                    healthKitIdentifier: template.id,
-                    healthKitTarget: template.defaultTarget,
-                    healthKitUnit: template.unitLabel
-                ))
-                addedIDs.insert(template.id)
-                showFlash(template.name)
+            if let idx = store.goals.firstIndex(where: { $0.healthKitIdentifier == template.id }) {
+                withAnimation(.spring(response: 0.3)) {
+                    store.goals[idx].isActive.toggle()
+                }
+                if store.goals[idx].isActive { showFlash(template.name) }
+            } else {
+                // Not in store yet — for lower-is-better metrics, ask for target first
+                if template.isLowerBetter {
+                    configuringHKTemplate = template
+                } else {
+                    store.goals.append(Goal(
+                        name: template.name, colorData: template.colorData, icon: template.icon,
+                        items: [],
+                        healthKitIdentifier: template.id,
+                        healthKitTarget: template.defaultTarget,
+                        healthKitUnit: template.unitLabel
+                    ))
+                    showFlash(template.name)
+                }
             }
         } label: {
             HStack(spacing: 14) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 10)
-                        .fill(template.colorData.value.opacity(0.15))
+                        .fill(template.colorData.value.opacity(onWheel ? 0.2 : 0.1))
                         .frame(width: 42, height: 42)
                     Image(systemName: template.icon)
                         .font(.system(size: 17))
-                        .foregroundStyle(template.colorData.value)
+                        .foregroundStyle(onWheel ? template.colorData.value : .white.opacity(0.4))
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text(template.name)
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(onWheel ? .white : .white.opacity(0.65))
                     Text(value > 0
                          ? "Today: \(formattedHK(value, unit: template.unitLabel))"
-                         : "Target: \(formattedHK(template.defaultTarget, unit: template.unitLabel))")
+                         : (template.isLowerBetter
+                            ? "Set your target \(template.unitLabel)"
+                            : "Target: \(formattedHK(template.defaultTarget, unit: template.unitLabel))"))
                         .font(.system(size: 11))
                         .foregroundStyle(.white.opacity(0.38))
                 }
                 Spacer()
-                Image(systemName: alreadyAdded ? "checkmark.circle.fill" : "plus.circle")
-                    .foregroundStyle(alreadyAdded ? template.colorData.value : .white.opacity(0.25))
+                Image(systemName: onWheel  ? "checkmark.circle.fill"
+                      : (offWheel ? "minus.circle" : "plus.circle"))
+                    .foregroundStyle(onWheel  ? template.colorData.value
+                                     : (offWheel ? .white.opacity(0.3) : .white.opacity(0.25)))
                     .font(.system(size: 20))
             }
             .padding(12)
             .background(
                 RoundedRectangle(cornerRadius: 14)
-                    .fill(alreadyAdded
+                    .fill(onWheel
                           ? template.colorData.value.opacity(0.12)
                           : Color.white.opacity(0.04))
                     .overlay(
                         RoundedRectangle(cornerRadius: 14)
-                            .stroke(alreadyAdded ? template.colorData.value.opacity(0.4) : Color.clear,
+                            .stroke(onWheel ? template.colorData.value.opacity(0.4) : Color.clear,
                                     lineWidth: 1)
                     )
             )
         }
         .buttonStyle(.plain)
-        .animation(.spring(response: 0.25), value: alreadyAdded)
+        .animation(.spring(response: 0.25), value: onWheel)
     }
 
     // MARK: Custom tab
@@ -400,6 +616,22 @@ private struct AddDailyContent: View {
         .padding(.horizontal, 32)
     }
 
+    private func emptyManageNote(_ text: String) -> some View {
+        VStack(spacing: 12) {
+            Spacer()
+            Image(systemName: "tray")
+                .font(.system(size: 36))
+                .foregroundStyle(.white.opacity(0.2))
+            Text(text)
+                .font(.system(size: 14))
+                .foregroundStyle(.white.opacity(0.35))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+            Spacer()
+        }
+        .frame(minHeight: 200)
+    }
+
     private func formattedHK(_ v: Double, unit: String) -> String {
         if unit == "steps" && v >= 1000 { return String(format: "%.1fk \(unit)", v / 1000) }
         if v < 10 { return String(format: "%.1f \(unit)", v) }
@@ -443,6 +675,7 @@ private struct AddLifeContent: View {
     @EnvironmentObject private var store: DataStore
 
     private enum Tab: String, CaseIterable {
+        case manage      = "Wheel"
         case suggestions = "Suggestions"
         case custom      = "Custom"
     }
@@ -457,13 +690,11 @@ private struct AddLifeContent: View {
         "person.2.fill","leaf","dumbbell.fill","cross.fill","airplane","mountain.2.fill"
     ]
 
-    @State private var tab: Tab              = .suggestions
-    @State private var addedIDs              = Set<String>()
-    @State private var preExistingNames      = Set<String>()
-    @State private var customName            = ""
-    @State private var customIcon            = "star.fill"
-    @State private var customColorIdx        = 0
-    @State private var flash: String?        = nil
+    @State private var tab: Tab         = .manage
+    @State private var customName       = ""
+    @State private var customIcon       = "star.fill"
+    @State private var customColorIdx   = 0
+    @State private var flash: String?   = nil
 
     var body: some View {
         VStack(spacing: 0) {
@@ -471,8 +702,9 @@ private struct AddLifeContent: View {
                 .padding(.bottom, 12)
 
             Group {
+                if tab == .manage      { manageTab }
                 if tab == .suggestions { suggestionsTab }
-                else                   { customTab }
+                if tab == .custom      { customTab }
             }
             .animation(.easeInOut(duration: 0.18), value: tab)
             .frame(maxHeight: .infinity)
@@ -482,9 +714,6 @@ private struct AddLifeContent: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                     .padding(.bottom, 8)
             }
-        }
-        .onAppear {
-            preExistingNames = Set(store.lifeGoals.map { $0.name })
         }
     }
 
@@ -508,6 +737,73 @@ private struct AddLifeContent: View {
         .padding(4)
         .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 14))
         .padding(.horizontal, 24)
+    }
+
+    // MARK: Manage tab
+
+    private var manageTab: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 0) {
+                if store.lifeGoals.isEmpty {
+                    emptyManageNote("No life goals yet. Add some from the other tabs.")
+                } else {
+                    VStack(spacing: 1) {
+                        ForEach($store.lifeGoals) { $goal in
+                            manageRow(goal: $goal)
+                        }
+                    }
+                    .background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
+                    .padding(.horizontal, 20)
+                    .padding(.top, 4)
+
+                    Text("Tap to toggle goals on or off the wheel. Their data is always preserved.")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.white.opacity(0.28))
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 32)
+                        .padding(.top, 16)
+                        .padding(.bottom, 8)
+                }
+            }
+            .padding(.bottom, 20)
+        }
+    }
+
+    private func manageRow(goal: Binding<LifeGoal>) -> some View {
+        let g = goal.wrappedValue
+        return Button {
+            withAnimation(.spring(response: 0.3)) {
+                goal.isActive.wrappedValue.toggle()
+            }
+        } label: {
+            HStack(spacing: 14) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 9)
+                        .fill(g.colorData.value.opacity(g.isActive ? 0.2 : 0.07))
+                        .frame(width: 38, height: 38)
+                    Image(systemName: g.icon)
+                        .font(.system(size: 15))
+                        .foregroundStyle(g.isActive ? g.colorData.value : .white.opacity(0.3))
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(g.name)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(g.isActive ? .white : .white.opacity(0.4))
+                    Text(g.isActive ? "On wheel" : "Off wheel")
+                        .font(.system(size: 11))
+                        .foregroundStyle(g.isActive
+                                         ? g.colorData.value.opacity(0.7)
+                                         : .white.opacity(0.22))
+                }
+                Spacer()
+                Image(systemName: g.isActive ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 22))
+                    .foregroundStyle(g.isActive ? g.colorData.value : .white.opacity(0.2))
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: Suggestions
@@ -537,9 +833,9 @@ private struct AddLifeContent: View {
 
     @ViewBuilder
     private func lifeGoalCard(_ sg: SuggestedLifeGoal) -> some View {
-        let isPreExisting  = preExistingNames.contains(sg.name)
-        let isSessionAdded = addedIDs.contains(sg.name)
-        let alreadyAdded   = isPreExisting || isSessionAdded
+        let existing   = store.lifeGoals.first { $0.name == sg.name }
+        let onWheel    = existing?.isActive == true
+        let offWheel   = existing != nil && existing?.isActive == false
         let kindLabel: String = {
             switch sg.kind {
             case .metric: return "Metric"
@@ -548,12 +844,13 @@ private struct AddLifeContent: View {
         }()
 
         Button {
-            if isSessionAdded {
-                store.lifeGoals.removeAll { $0.name == sg.name }
-                addedIDs.remove(sg.name)
-            } else if !isPreExisting {
+            if let idx = store.lifeGoals.firstIndex(where: { $0.name == sg.name }) {
+                withAnimation(.spring(response: 0.3)) {
+                    store.lifeGoals[idx].isActive.toggle()
+                }
+                if store.lifeGoals[idx].isActive { showFlash(sg.name) }
+            } else {
                 store.lifeGoals.append(sg.toLifeGoal())
-                addedIDs.insert(sg.name)
                 showFlash(sg.name)
             }
         } label: {
@@ -561,15 +858,17 @@ private struct AddLifeContent: View {
                 HStack {
                     Image(systemName: sg.icon)
                         .font(.system(size: 18))
-                        .foregroundStyle(sg.colorData.value)
+                        .foregroundStyle(onWheel ? sg.colorData.value : .white.opacity(offWheel ? 0.3 : 0.6))
                     Spacer()
-                    Image(systemName: alreadyAdded ? "checkmark.circle.fill" : "plus.circle")
-                        .foregroundStyle(alreadyAdded ? sg.colorData.value : .white.opacity(0.25))
+                    Image(systemName: onWheel ? "checkmark.circle.fill"
+                          : (offWheel ? "minus.circle" : "plus.circle"))
+                        .foregroundStyle(onWheel ? sg.colorData.value
+                                         : (offWheel ? .white.opacity(0.3) : .white.opacity(0.25)))
                         .font(.system(size: 16))
                 }
                 Text(sg.name)
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(onWheel ? .white : .white.opacity(0.55))
                 Text(kindLabel)
                     .font(.system(size: 11))
                     .foregroundStyle(.white.opacity(0.35))
@@ -578,14 +877,14 @@ private struct AddLifeContent: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 RoundedRectangle(cornerRadius: 14)
-                    .fill(alreadyAdded ? sg.colorData.value.opacity(0.18) : Color.white.opacity(0.05))
+                    .fill(onWheel ? sg.colorData.value.opacity(0.18) : Color.white.opacity(0.05))
                     .overlay(RoundedRectangle(cornerRadius: 14)
-                        .stroke(alreadyAdded ? sg.colorData.value.opacity(0.5) : Color.clear,
+                        .stroke(onWheel ? sg.colorData.value.opacity(0.5) : Color.clear,
                                 lineWidth: 1))
             )
         }
         .buttonStyle(.plain)
-        .animation(.spring(response: 0.25), value: alreadyAdded)
+        .animation(.spring(response: 0.25), value: onWheel)
     }
 
     // MARK: Custom
@@ -668,6 +967,22 @@ private struct AddLifeContent: View {
             .font(.system(size: 10, weight: .semibold, design: .monospaced))
             .foregroundStyle(.white.opacity(0.3))
             .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func emptyManageNote(_ text: String) -> some View {
+        VStack(spacing: 12) {
+            Spacer()
+            Image(systemName: "tray")
+                .font(.system(size: 36))
+                .foregroundStyle(.white.opacity(0.2))
+            Text(text)
+                .font(.system(size: 14))
+                .foregroundStyle(.white.opacity(0.35))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+            Spacer()
+        }
+        .frame(minHeight: 200)
     }
 
     private func showFlash(_ name: String) {

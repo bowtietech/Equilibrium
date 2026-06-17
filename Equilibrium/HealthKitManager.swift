@@ -12,6 +12,9 @@ struct HealthMetricTemplate: Identifiable {
     let unitLabel: String
     let category: String
     let queryKind: QueryKind
+    /// When true the goal is to get the value DOWN to the target (e.g. resting HR).
+    /// Progress = min(target / value, 1.0) so being at or below target = 100%.
+    let isLowerBetter: Bool
 
     enum QueryKind {
         case quantitySum(HKQuantityTypeIdentifier, HKUnit)       // cumulative types (steps, calories…)
@@ -30,7 +33,8 @@ struct HealthMetricTemplate: Identifiable {
             defaultTarget: 10_000,
             unitLabel:     "steps",
             category:      "Fitness",
-            queryKind:     .quantitySum(.stepCount, .count())
+            queryKind:     .quantitySum(.stepCount, .count()),
+            isLowerBetter: false
         ),
         HealthMetricTemplate(
             id:            HKQuantityTypeIdentifier.activeEnergyBurned.rawValue,
@@ -40,7 +44,8 @@ struct HealthMetricTemplate: Identifiable {
             defaultTarget: 500,
             unitLabel:     "kcal",
             category:      "Fitness",
-            queryKind:     .quantitySum(.activeEnergyBurned, .kilocalorie())
+            queryKind:     .quantitySum(.activeEnergyBurned, .kilocalorie()),
+            isLowerBetter: false
         ),
         HealthMetricTemplate(
             id:            HKQuantityTypeIdentifier.appleExerciseTime.rawValue,
@@ -50,7 +55,8 @@ struct HealthMetricTemplate: Identifiable {
             defaultTarget: 30,
             unitLabel:     "min",
             category:      "Fitness",
-            queryKind:     .quantitySum(.appleExerciseTime, .minute())
+            queryKind:     .quantitySum(.appleExerciseTime, .minute()),
+            isLowerBetter: false
         ),
         HealthMetricTemplate(
             id:            HKQuantityTypeIdentifier.distanceWalkingRunning.rawValue,
@@ -60,7 +66,8 @@ struct HealthMetricTemplate: Identifiable {
             defaultTarget: 5,
             unitLabel:     "km",
             category:      "Fitness",
-            queryKind:     .quantitySum(.distanceWalkingRunning, .meterUnit(with: .kilo))
+            queryKind:     .quantitySum(.distanceWalkingRunning, .meterUnit(with: .kilo)),
+            isLowerBetter: false
         ),
         // Sleep
         HealthMetricTemplate(
@@ -71,7 +78,8 @@ struct HealthMetricTemplate: Identifiable {
             defaultTarget: 8,
             unitLabel:     "hrs",
             category:      "Sleep",
-            queryKind:     .sleep
+            queryKind:     .sleep,
+            isLowerBetter: false
         ),
         // Mindfulness
         HealthMetricTemplate(
@@ -82,9 +90,10 @@ struct HealthMetricTemplate: Identifiable {
             defaultTarget: 10,
             unitLabel:     "min",
             category:      "Mindfulness",
-            queryKind:     .mindful
+            queryKind:     .mindful,
+            isLowerBetter: false
         ),
-        // Body
+        // Body — lower is better; user must set their own target
         HealthMetricTemplate(
             id:            HKQuantityTypeIdentifier.restingHeartRate.rawValue,
             name:          "Resting Heart Rate",
@@ -93,7 +102,8 @@ struct HealthMetricTemplate: Identifiable {
             defaultTarget: 60,
             unitLabel:     "bpm",
             category:      "Body",
-            queryKind:     .quantityAverage(.restingHeartRate, .count().unitDivided(by: .minute()))
+            queryKind:     .quantityAverage(.restingHeartRate, .count().unitDivided(by: .minute())),
+            isLowerBetter: true
         ),
     ]
 
@@ -143,7 +153,7 @@ final class HealthKitManager: ObservableObject {
 
     func refresh(goals: [Goal]) async {
         var updated: [UUID: Double] = [:]
-        for goal in goals {
+        for goal in goals where goal.isActive {
             guard
                 let identifier = goal.healthKitIdentifier,
                 let target     = goal.healthKitTarget, target > 0,
@@ -151,7 +161,15 @@ final class HealthKitManager: ObservableObject {
             else { continue }
 
             let value = await todayValue(for: template)
-            updated[goal.id] = min(value / target, 1.0)
+            guard value > 0 else { updated[goal.id] = 0; continue }
+
+            if template.isLowerBetter {
+                // Goal is to reach (or go below) the target value.
+                // value <= target → complete (1.0); value > target → partial.
+                updated[goal.id] = min(target / value, 1.0)
+            } else {
+                updated[goal.id] = min(value / target, 1.0)
+            }
         }
         progressById = updated
     }

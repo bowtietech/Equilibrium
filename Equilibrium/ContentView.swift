@@ -31,11 +31,11 @@ struct ContentView: View {
     private var entries: [WheelEntry] {
         switch mode {
         case .daily:
-            return store.goals.map { goal in
+            return store.goals.filter(\.isActive).map { goal in
                 goal.wheelEntry(healthProgress: health.progressById[goal.id])
             }
         case .life:
-            return store.lifeGoals.map(\.wheelEntry)
+            return store.lifeGoals.filter(\.isActive).map(\.wheelEntry)
         }
     }
 
@@ -69,7 +69,7 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showProfile) {
             ProfileView(
-                balanceScore: store.goals.balanceScore,
+                balanceScore: store.goals.filter(\.isActive).balanceScore,
                 dailyGoalCount: store.goals.count,
                 lifeGoalCount: store.lifeGoals.count,
                 showHealthImport: $showHealthImport
@@ -93,15 +93,16 @@ struct ContentView: View {
             if phase == .active { Task { await health.refresh(goals: store.goals) } }
         }
         .onChange(of: store.goals) { _, goals in
-            // Clamp activeIndex so GoalWheelView never receives an out-of-bounds index
-            if mode == .daily && activeIndex >= goals.count {
-                activeIndex = max(0, goals.count - 1)
+            let activeCount = goals.filter(\.isActive).count
+            if mode == .daily && activeIndex >= activeCount {
+                activeIndex = max(0, activeCount - 1)
             }
             Task { await health.refresh(goals: goals) }
         }
         .onChange(of: store.lifeGoals) { _, lifeGoals in
-            if mode == .life && activeIndex >= lifeGoals.count {
-                activeIndex = max(0, lifeGoals.count - 1)
+            let activeCount = lifeGoals.filter(\.isActive).count
+            if mode == .life && activeIndex >= activeCount {
+                activeIndex = max(0, activeCount - 1)
             }
         }
     }
@@ -110,12 +111,17 @@ struct ContentView: View {
     private var detailDestination: some View {
         switch mode {
         case .daily:
-            if store.goals.indices.contains(activeIndex) {
-                GoalDetailView(goal: $store.goals[activeIndex])
+            // activeIndex indexes into the active-filtered list; map back to store array
+            let activeGoals = store.goals.indices.filter { store.goals[$0].isActive }
+            if activeGoals.indices.contains(activeIndex),
+               store.goals.indices.contains(activeGoals[activeIndex]) {
+                GoalDetailView(goal: $store.goals[activeGoals[activeIndex]])
             }
         case .life:
-            if store.lifeGoals.indices.contains(activeIndex) {
-                LifeGoalDetailView(goal: $store.lifeGoals[activeIndex])
+            let activeLife = store.lifeGoals.indices.filter { store.lifeGoals[$0].isActive }
+            if activeLife.indices.contains(activeIndex),
+               store.lifeGoals.indices.contains(activeLife[activeIndex]) {
+                LifeGoalDetailView(goal: $store.lifeGoals[activeLife[activeIndex]])
             }
         }
     }
@@ -146,8 +152,8 @@ struct ContentView: View {
 
             HStack(spacing: 10) {
                 Button { showAddGoal = true } label: {
-                    Image(systemName: "plus")
-                        .font(.system(size: 15, weight: .semibold))
+                    Image(systemName: "slider.horizontal.3")
+                        .font(.system(size: 14, weight: .medium))
                         .foregroundStyle(.white.opacity(0.75))
                         .frame(width: 32, height: 32)
                         .background(.white.opacity(0.09), in: Circle())
@@ -225,7 +231,7 @@ struct ContentView: View {
     }
 
     private var dailyScoreCard: some View {
-        let score = store.goals.balanceScore
+        let score = store.goals.filter(\.isActive).balanceScore
         return HStack(spacing: 14) {
             ringView(progress: score, color: scoreColor(score))
                 .frame(width: 44, height: 44)
@@ -321,15 +327,21 @@ struct ContentView: View {
 
     @ViewBuilder
     private var progressSubtitle: some View {
+        let activeDaily = store.goals.filter(\.isActive)
+        let activeLife  = store.lifeGoals.filter(\.isActive)
         switch mode {
         case .daily:
-            if store.goals.isEmpty {
-                Text("no goals set")
+            if activeDaily.isEmpty {
+                Text("no goals on wheel")
                     .font(.system(size: 14, design: .monospaced))
                     .foregroundStyle(.white.opacity(0.25))
             } else {
-                let g = store.goals[min(activeIndex, store.goals.count - 1)]
-                if let tp = g.todayProgress {
+                let g = activeDaily[min(activeIndex, activeDaily.count - 1)]
+                if g.isHealthBacked, let p = health.progressById[g.id] {
+                    Text("\(Int(p * 100))%")
+                        .font(.system(size: 14, design: .monospaced))
+                        .foregroundStyle(.white.opacity(0.45))
+                } else if let tp = g.todayProgress {
                     Text("\(Int(tp * 100))% today")
                         .font(.system(size: 14, design: .monospaced))
                         .foregroundStyle(.white.opacity(0.45))
@@ -340,12 +352,12 @@ struct ContentView: View {
                 }
             }
         case .life:
-            if store.lifeGoals.isEmpty {
-                Text("no life goals set")
+            if activeLife.isEmpty {
+                Text("no life goals on wheel")
                     .font(.system(size: 14, design: .monospaced))
                     .foregroundStyle(.white.opacity(0.25))
             } else {
-                let lg = store.lifeGoals[min(activeIndex, store.lifeGoals.count - 1)]
+                let lg = activeLife[min(activeIndex, activeLife.count - 1)]
                 switch lg.kind {
                 case .metric(let m):
                     Text("\(m.currentLabel) → \(m.targetLabel)")
