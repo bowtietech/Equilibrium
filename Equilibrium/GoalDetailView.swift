@@ -44,7 +44,7 @@ struct GoalDetailView: View {
 
     var body: some View {
         ZStack {
-            Color(red: 0.04, green: 0.04, blue: 0.09).ignoresSafeArea()
+            Color.appBg.ignoresSafeArea()
 
             VStack {
                 RadialGradient(
@@ -141,23 +141,23 @@ struct GoalDetailView: View {
                         let current = effectiveProgress * target
                         Text("\(formattedValue(current, unit: unit)) / \(formattedValue(target, unit: unit))")
                             .font(.system(size: 13, weight: .regular, design: .monospaced))
-                            .foregroundStyle(.white.opacity(0.38))
+                            .foregroundStyle(.primary.opacity(0.38))
                     } else if let tp = goal.todayProgress {
                         let done  = goal.items.filter { $0.isActiveToday && $0.isComplete }.count
                         let total = goal.items.filter(\.isActiveToday).count
                         Text("\(Int(tp * 100))% today  ·  \(done)/\(total) complete")
                             .font(.system(size: 13, weight: .regular, design: .monospaced))
-                            .foregroundStyle(.white.opacity(0.38))
+                            .foregroundStyle(.primary.opacity(0.38))
                     } else {
                         Text("no goals scheduled today")
                             .font(.system(size: 13, weight: .regular, design: .monospaced))
-                            .foregroundStyle(.white.opacity(0.25))
+                            .foregroundStyle(.primary.opacity(0.25))
                     }
                 }
                 if !editingTitle {
                     Text("tap name to rename")
                         .font(.system(size: 10, design: .monospaced))
-                        .foregroundStyle(.white.opacity(0.15))
+                        .foregroundStyle(.primary.opacity(0.15))
                 }
             }
             .frame(maxWidth: .infinity)
@@ -189,7 +189,7 @@ struct GoalDetailView: View {
                 VStack(spacing: 8) {
                     GeometryReader { geo in
                         ZStack(alignment: .leading) {
-                            Capsule().fill(.white.opacity(0.08)).frame(height: 8)
+                            Capsule().fill(Color.appRowFill).frame(height: 8)
                             Capsule()
                                 .fill(
                                     LinearGradient(
@@ -206,12 +206,12 @@ struct GoalDetailView: View {
                     HStack {
                         Text("0")
                             .font(.system(size: 10, design: .monospaced))
-                            .foregroundStyle(.white.opacity(0.25))
+                            .foregroundStyle(.primary.opacity(0.25))
                         Spacer()
                         if let target = goal.healthKitTarget, let unit = goal.healthKitUnit {
                             Text(formattedValue(target, unit: unit))
                                 .font(.system(size: 10, design: .monospaced))
-                                .foregroundStyle(.white.opacity(0.25))
+                                .foregroundStyle(.primary.opacity(0.25))
                         }
                     }
                 }
@@ -223,7 +223,7 @@ struct GoalDetailView: View {
                         .foregroundStyle(.red.opacity(0.7))
                     Text("Synced from Apple Health")
                         .font(.system(size: 12))
-                        .foregroundStyle(.white.opacity(0.35))
+                        .foregroundStyle(.primary.opacity(0.35))
                 }
             }
             .padding(.vertical, 12)
@@ -244,9 +244,9 @@ struct GoalDetailView: View {
                     editBuffer: $editBuffer
                 )
                 .listRowBackground(
-                    Color.white.opacity(item.isActiveToday ? 0.06 : 0.03)
+                    item.isActiveToday ? Color.appRowFill : Color.appRowFill.opacity(0.5)
                 )
-                .listRowSeparatorTint(.white.opacity(0.07))
+                .listRowSeparatorTint(Color.appRowFill)
                 .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
             }
             .onDelete { goal.items.remove(atOffsets: $0) }
@@ -255,12 +255,12 @@ struct GoalDetailView: View {
             HStack {
                 Text("Goals")
                     .font(.system(size: 11, weight: .semibold, design: .monospaced))
-                    .foregroundStyle(.white.opacity(0.3))
+                    .foregroundStyle(.primary.opacity(0.3))
                     .textCase(nil)
                 Spacer()
                 Text("swipe to delete  ·  hold to reorder")
                     .font(.system(size: 10, design: .monospaced))
-                    .foregroundStyle(.white.opacity(0.18))
+                    .foregroundStyle(.primary.opacity(0.18))
                     .textCase(nil)
             }
             .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 6, trailing: 20))
@@ -272,24 +272,24 @@ struct GoalDetailView: View {
     private var addItemSheet: some View {
         VStack(alignment: .leading, spacing: 20) {
             Capsule()
-                .fill(.white.opacity(0.2))
+                .fill(.primary.opacity(0.2))
                 .frame(width: 36, height: 4)
                 .frame(maxWidth: .infinity)
                 .padding(.top, 8)
 
             Text("New \(goal.name) Goal")
                 .font(.system(size: 18, weight: .semibold, design: .rounded))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
 
             // Name field
             TextField("e.g. Meditate 10 minutes", text: $newItemName)
                 .textFieldStyle(.plain)
                 .font(.system(size: 16))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
                 .tint(goal.color)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 14)
-                .background(Color.white.opacity(0.08))
+                .background(Color.appRowFill)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
 
             // Schedule picker
@@ -299,7 +299,7 @@ struct GoalDetailView: View {
             Button(action: commitNewItem) {
                 Text("Add Goal")
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(canAdd ? goal.color : .white.opacity(0.3))
+                    .foregroundStyle(canAdd ? goal.color : .primary.opacity(0.3))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 15)
                     .background(goal.color.opacity(canAdd ? 0.15 : 0.06))
@@ -311,7 +311,7 @@ struct GoalDetailView: View {
         }
         .padding(.horizontal, 24)
         .presentationDetents([.height(scheduleSheetHeight)])
-        .presentationBackground(Color(red: 0.08, green: 0.08, blue: 0.13))
+        .presentationBackground(Color.appSurface)
         .presentationCornerRadius(24)
         .onSubmit { commitNewItem() }
     }
@@ -335,7 +335,7 @@ struct GoalDetailView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("REPEAT")
                 .font(.system(size: 10, weight: .semibold, design: .monospaced))
-                .foregroundStyle(.white.opacity(0.3))
+                .foregroundStyle(.primary.opacity(0.3))
 
             // Type segmented tabs
             HStack(spacing: 6) {
@@ -345,12 +345,12 @@ struct GoalDetailView: View {
                     } label: {
                         Text(type.rawValue)
                             .font(.system(size: 11, weight: .medium))
-                            .foregroundStyle(scheduleType == type ? goal.color : .white.opacity(0.45))
+                            .foregroundStyle(scheduleType == type ? goal.color : .primary.opacity(0.45))
                             .padding(.horizontal, 10)
                             .padding(.vertical, 6)
                             .background(scheduleType == type
                                         ? goal.color.opacity(0.18)
-                                        : Color.white.opacity(0.06))
+                                        : Color.appRowFill)
                             .clipShape(Capsule())
                     }
                     .buttonStyle(.plain)
@@ -374,11 +374,11 @@ struct GoalDetailView: View {
                         } label: {
                             Text(weekdayLabels[wd - 1])
                                 .font(.system(size: 13, weight: .semibold, design: .monospaced))
-                                .foregroundStyle(selected ? goal.color : .white.opacity(0.35))
+                                .foregroundStyle(selected ? goal.color : .primary.opacity(0.35))
                                 .frame(width: 36, height: 36)
                                 .background(selected
                                             ? goal.color.opacity(0.2)
-                                            : Color.white.opacity(0.07))
+                                            : Color.appRowFill)
                                 .clipShape(Circle())
                         }
                         .buttonStyle(.plain)
@@ -440,7 +440,7 @@ struct GoalItemRow: View {
             } label: {
                 Image(systemName: item.isComplete ? "checkmark.circle.fill" : "circle")
                     .font(.system(size: 22))
-                    .foregroundStyle(item.isComplete ? goalColor : .white.opacity(0.28))
+                    .foregroundStyle(item.isComplete ? goalColor : .primary.opacity(0.28))
                     .animation(.spring(response: 0.2), value: item.isComplete)
             }
             .buttonStyle(.plain)
@@ -451,14 +451,14 @@ struct GoalItemRow: View {
                     TextField("Goal name", text: $editBuffer)
                         .textFieldStyle(.plain)
                         .font(.system(size: 15))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                         .tint(goalColor)
                         .onSubmit { commitEdit() }
                 } else {
                     Text(item.name)
                         .font(.system(size: 15))
-                        .foregroundStyle(item.isComplete ? .white.opacity(0.35) : .white.opacity(0.88))
-                        .strikethrough(item.isComplete, color: .white.opacity(0.22))
+                        .foregroundStyle(Color.primary.opacity(item.isComplete ? 0.35 : 0.88))
+                        .strikethrough(item.isComplete, color: .primary.opacity(0.22))
                         .animation(.easeInOut(duration: 0.18), value: item.isComplete)
                         .onTapGesture {
                             editBuffer = item.name
@@ -477,7 +477,7 @@ struct GoalItemRow: View {
                         .font(.system(size: 11, weight: .regular, design: .monospaced))
                         .foregroundStyle(item.isActiveToday
                                          ? goalColor.opacity(0.65)
-                                         : .white.opacity(0.22))
+                                         : .primary.opacity(0.22))
                 }
             }
 

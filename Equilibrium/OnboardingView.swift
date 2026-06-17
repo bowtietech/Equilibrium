@@ -170,7 +170,7 @@ struct OnboardingView: View {
 
     var body: some View {
         ZStack {
-            Color(red: 0.04, green: 0.04, blue: 0.09).ignoresSafeArea()
+            Color.appBg.ignoresSafeArea()
             RadialGradient(
                 colors: [Color(red: 0.30, green: 0.20, blue: 0.60).opacity(0.35), .clear],
                 center: .top, startRadius: 0, endRadius: 500
@@ -206,7 +206,7 @@ struct OnboardingView: View {
                 .animation(.spring(response: 0.42, dampingFraction: 0.88), value: step)
             }
         }
-        .preferredColorScheme(.dark)
+        //.preferredColorScheme(.dark) — handled by RootView
     }
 
     // MARK: - Progress dots
@@ -215,7 +215,7 @@ struct OnboardingView: View {
         HStack(spacing: 6) {
             ForEach(0..<totalSteps, id: \.self) { i in
                 Capsule()
-                    .fill(i <= step ? Color.white : Color.white.opacity(0.18))
+                    .fill(i <= step ? .primary : Color.primary.opacity(0.18))
                     .frame(width: i == step ? 22 : 6, height: 6)
                     .animation(.spring(response: 0.35), value: step)
             }
@@ -272,11 +272,11 @@ private struct WelcomeStep: View {
 
             Text("equilibrium")
                 .font(.system(size: 32, weight: .bold, design: .monospaced))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
             
             Text("Balance your life, one goal at a time.")
                 .font(.system(size: 16))
-                .foregroundStyle(.white.opacity(0.5))
+                .foregroundStyle(.primary.opacity(0.5))
                 .multilineTextAlignment(.center)
                 .padding(.top, 10)
                 .padding(.horizontal, 40)
@@ -329,11 +329,11 @@ private struct PickerStep: View {
             VStack(spacing: 6) {
                 Text("What would you like to track?")
                     .font(.system(size: 24, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                     .multilineTextAlignment(.center)
                 Text("Pick from suggestions, connect Health, or create your own.")
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.4))
+                    .foregroundStyle(.primary.opacity(0.4))
                     .multilineTextAlignment(.center)
             }
             .padding(.horizontal, 28)
@@ -345,11 +345,11 @@ private struct PickerStep: View {
                     Button { withAnimation(.spring(response: 0.3)) { tab = t } } label: {
                         Text(t.rawValue)
                             .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(tab == t ? .white : .white.opacity(0.35))
+                            .foregroundStyle(tab == t ? Color.primary : Color.primary.opacity(0.35))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 10)
                             .background(
-                                tab == t ? Color.white.opacity(0.12) : Color.clear,
+                                tab == t ? Color.appRowFill.opacity(2) : Color.clear,
                                 in: RoundedRectangle(cornerRadius: 10)
                             )
                     }
@@ -357,7 +357,7 @@ private struct PickerStep: View {
                 }
             }
             .padding(4)
-            .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 14))
+            .background(Color.appRowFill, in: RoundedRectangle(cornerRadius: 14))
             .padding(.horizontal, 24)
             .padding(.bottom, 12)
 
@@ -401,7 +401,7 @@ private struct PickerStep: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text(cat.uppercased())
                             .font(.system(size: 10, weight: .semibold, design: .monospaced))
-                            .foregroundStyle(.white.opacity(0.3))
+                            .foregroundStyle(.primary.opacity(0.3))
                             .padding(.leading, 4)
 
                         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
@@ -437,10 +437,10 @@ private struct PickerStep: View {
                 }
                 Text(sg.name)
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                 Text("\(sg.itemNames.count) items")
                     .font(.system(size: 11))
-                    .foregroundStyle(.white.opacity(0.35))
+                    .foregroundStyle(.primary.opacity(0.35))
             }
             .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -448,7 +448,7 @@ private struct PickerStep: View {
                 RoundedRectangle(cornerRadius: 14)
                     .fill(isSelected
                           ? sg.colorData.value.opacity(0.18)
-                          : Color.white.opacity(0.05))
+                          : Color.appRowFill)
                     .overlay(
                         RoundedRectangle(cornerRadius: 14)
                             .stroke(isSelected ? sg.colorData.value.opacity(0.5) : Color.clear, lineWidth: 1)
@@ -499,16 +499,16 @@ private struct PickerStep: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(template.name)
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                     Text(value > 0
                          ? "Today: \(formattedHK(value, unit: template.unitLabel))"
                          : "Target: \(formattedHK(template.defaultTarget, unit: template.unitLabel))")
                         .font(.system(size: 11))
-                        .foregroundStyle(.white.opacity(0.38))
+                        .foregroundStyle(.primary.opacity(0.38))
                 }
                 Spacer()
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .foregroundStyle(isSelected ? template.colorData.value : .white.opacity(0.25))
+                    .foregroundStyle(isSelected ? template.colorData.value : .primary.opacity(0.25))
                     .font(.system(size: 20))
             }
             .padding(12)
@@ -516,7 +516,7 @@ private struct PickerStep: View {
                 RoundedRectangle(cornerRadius: 14)
                     .fill(isSelected
                           ? template.colorData.value.opacity(0.12)
-                          : Color.white.opacity(0.04))
+                          : Color.appRowFill.opacity(0.7))
                     .overlay(
                         RoundedRectangle(cornerRadius: 14)
                             .stroke(isSelected ? template.colorData.value.opacity(0.4) : Color.clear, lineWidth: 1)
@@ -537,10 +537,10 @@ private struct PickerStep: View {
                     label("Goal name")
                     TextField("e.g. Morning Routine", text: $customName)
                         .font(.system(size: 15))
-                        .foregroundStyle(.white)
-                        .tint(.white)
+                        .foregroundStyle(.primary)
+                        .tint(.primary)
                         .padding(14)
-                        .background(.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 12))
+                        .background(Color.appRowFill, in: RoundedRectangle(cornerRadius: 12))
                 }
 
                 // Icon
@@ -554,13 +554,13 @@ private struct PickerStep: View {
                                     .font(.system(size: 17))
                                     .foregroundStyle(customIcon == sym
                                                      ? autoColor.value
-                                                     : .white.opacity(0.4))
+                                                     : .primary.opacity(0.4))
                                     .frame(width: 40, height: 40)
                                     .background(
                                         RoundedRectangle(cornerRadius: 10)
                                             .fill(customIcon == sym
                                                   ? autoColor.value.opacity(0.18)
-                                                  : Color.white.opacity(0.05))
+                                                  : Color.appRowFill)
                                     )
                             }
                             .buttonStyle(.plain)
@@ -573,11 +573,11 @@ private struct PickerStep: View {
                 Button { addCustomGoal() } label: {
                     Label("Add goal", systemImage: "plus")
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(canAdd ? .white : .white.opacity(0.25))
+                        .foregroundStyle(canAdd ? Color.primary : Color.primary.opacity(0.25))
                         .frame(maxWidth: .infinity)
                         .frame(height: 48)
                         .background(
-                            canAdd ? autoColor.value.opacity(0.28) : Color.white.opacity(0.06),
+                            canAdd ? autoColor.value.opacity(0.28) : Color.appRowFill,
                             in: RoundedRectangle(cornerRadius: 12)
                         )
                 }
@@ -601,11 +601,11 @@ private struct PickerStep: View {
                             .foregroundStyle(goal.color)
                         Text(goal.name)
                             .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.primary)
                         Button { removeGoal(goal) } label: {
                             Image(systemName: "xmark")
                                 .font(.system(size: 9, weight: .bold))
-                                .foregroundStyle(.white.opacity(0.4))
+                                .foregroundStyle(.primary.opacity(0.4))
                         }
                         .buttonStyle(.plain)
                     }
@@ -683,11 +683,11 @@ private struct PickerStep: View {
     private func label(_ text: String) -> some View {
         Text(text.uppercased())
             .font(.system(size: 10, weight: .semibold, design: .monospaced))
-            .foregroundStyle(.white.opacity(0.3))
+            .foregroundStyle(.primary.opacity(0.3))
     }
 
     private var loadingView: some View {
-        VStack { Spacer(); ProgressView().tint(.white.opacity(0.4)); Spacer() }
+        VStack { Spacer(); ProgressView().tint(.primary.opacity(0.4)); Spacer() }
     }
 
     private func unavailableView(_ msg: String) -> some View {
@@ -695,10 +695,10 @@ private struct PickerStep: View {
             Spacer()
             Image(systemName: "exclamationmark.circle")
                 .font(.system(size: 36))
-                .foregroundStyle(.white.opacity(0.3))
+                .foregroundStyle(.primary.opacity(0.3))
             Text(msg)
                 .font(.system(size: 14))
-                .foregroundStyle(.white.opacity(0.4))
+                .foregroundStyle(.primary.opacity(0.4))
                 .multilineTextAlignment(.center)
             Spacer()
         }
@@ -737,10 +737,10 @@ private struct LifeGoalPickerStep: View {
             VStack(spacing: 6) {
                 Text("Big picture goals")
                     .font(.system(size: 24, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                 Text("Long-term ambitions, projects, and milestones.")
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.4))
+                    .foregroundStyle(.primary.opacity(0.4))
                     .multilineTextAlignment(.center)
             }
             .padding(.horizontal, 28)
@@ -752,17 +752,17 @@ private struct LifeGoalPickerStep: View {
                     Button { withAnimation(.spring(response: 0.3)) { tab = t } } label: {
                         Text(t.rawValue)
                             .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(tab == t ? .white : .white.opacity(0.35))
+                            .foregroundStyle(tab == t ? Color.primary : Color.primary.opacity(0.35))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 10)
-                            .background(tab == t ? Color.white.opacity(0.12) : Color.clear,
+                            .background(tab == t ? Color.appRowFill.opacity(2) : Color.clear,
                                         in: RoundedRectangle(cornerRadius: 10))
                     }
                     .buttonStyle(.plain)
                 }
             }
             .padding(4)
-            .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 14))
+            .background(Color.appRowFill, in: RoundedRectangle(cornerRadius: 14))
             .padding(.horizontal, 24)
             .padding(.bottom, 12)
 
@@ -796,7 +796,7 @@ private struct LifeGoalPickerStep: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text(cat.uppercased())
                             .font(.system(size: 10, weight: .semibold, design: .monospaced))
-                            .foregroundStyle(.white.opacity(0.3))
+                            .foregroundStyle(.primary.opacity(0.3))
                             .padding(.leading, 4)
 
                         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
@@ -837,16 +837,16 @@ private struct LifeGoalPickerStep: View {
                 }
                 Text(sg.name)
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                 Text(kindLabel)
                     .font(.system(size: 11))
-                    .foregroundStyle(.white.opacity(0.35))
+                    .foregroundStyle(.primary.opacity(0.35))
             }
             .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 RoundedRectangle(cornerRadius: 14)
-                    .fill(isSelected ? sg.colorData.value.opacity(0.18) : Color.white.opacity(0.05))
+                    .fill(isSelected ? sg.colorData.value.opacity(0.18) : Color.appRowFill)
                     .overlay(RoundedRectangle(cornerRadius: 14)
                         .stroke(isSelected ? sg.colorData.value.opacity(0.5) : Color.clear, lineWidth: 1))
             )
@@ -865,9 +865,9 @@ private struct LifeGoalPickerStep: View {
                 VStack(alignment: .leading, spacing: 8) {
                     sectionLabel("Goal name")
                     TextField("e.g. Build my dream home", text: $customName)
-                        .font(.system(size: 15)).foregroundStyle(.white).tint(.white)
+                        .font(.system(size: 15)).foregroundStyle(.primary).tint(.primary)
                         .padding(14)
-                        .background(.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 12))
+                        .background(Color.appRowFill, in: RoundedRectangle(cornerRadius: 12))
                 }
                 VStack(alignment: .leading, spacing: 8) {
                     sectionLabel("Icon")
@@ -875,10 +875,10 @@ private struct LifeGoalPickerStep: View {
                         ForEach(Self.iconOptions, id: \.self) { sym in
                             Button { customIcon = sym } label: {
                                 Image(systemName: sym).font(.system(size: 17))
-                                    .foregroundStyle(customIcon == sym ? autoColor.value : .white.opacity(0.4))
+                                    .foregroundStyle(customIcon == sym ? autoColor.value : .primary.opacity(0.4))
                                     .frame(width: 40, height: 40)
                                     .background(RoundedRectangle(cornerRadius: 10)
-                                        .fill(customIcon == sym ? autoColor.value.opacity(0.18) : Color.white.opacity(0.05)))
+                                        .fill(customIcon == sym ? autoColor.value.opacity(0.18) : Color.appRowFill))
                             }.buttonStyle(.plain)
                         }
                     }
@@ -886,10 +886,10 @@ private struct LifeGoalPickerStep: View {
                 Button { addCustom() } label: {
                     Label("Add life goal", systemImage: "plus")
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(canAdd ? .white : .white.opacity(0.25))
+                        .foregroundStyle(canAdd ? Color.primary : Color.primary.opacity(0.25))
                         .frame(maxWidth: .infinity).frame(height: 48)
                         .background(
-                            canAdd ? autoColor.value.opacity(0.28) : Color.white.opacity(0.06),
+                            canAdd ? autoColor.value.opacity(0.28) : Color.appRowFill,
                             in: RoundedRectangle(cornerRadius: 12))
                 }
                 .buttonStyle(.plain)
@@ -907,9 +907,9 @@ private struct LifeGoalPickerStep: View {
                 ForEach(pendingLifeGoals) { lg in
                     HStack(spacing: 5) {
                         Image(systemName: lg.icon).font(.system(size: 11)).foregroundStyle(lg.color)
-                        Text(lg.name).font(.system(size: 12, weight: .medium)).foregroundStyle(.white)
+                        Text(lg.name).font(.system(size: 12, weight: .medium)).foregroundStyle(.primary)
                         Button { pendingLifeGoals.removeAll { $0.id == lg.id } } label: {
-                            Image(systemName: "xmark").font(.system(size: 9, weight: .bold)).foregroundStyle(.white.opacity(0.4))
+                            Image(systemName: "xmark").font(.system(size: 9, weight: .bold)).foregroundStyle(.primary.opacity(0.4))
                         }.buttonStyle(.plain)
                     }
                     .padding(.horizontal, 10).padding(.vertical, 7)
@@ -945,7 +945,7 @@ private struct LifeGoalPickerStep: View {
     private func sectionLabel(_ text: String) -> some View {
         Text(text.uppercased())
             .font(.system(size: 10, weight: .semibold, design: .monospaced))
-            .foregroundStyle(.white.opacity(0.3))
+            .foregroundStyle(.primary.opacity(0.3))
     }
 }
 
@@ -964,12 +964,12 @@ private struct ReviewStep: View {
             VStack(spacing: 6) {
                 Text(totalCount == 0 ? "No goals yet" : "Your goals")
                     .font(.system(size: 24, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                 Text(totalCount == 0
                      ? "You can always add goals from the main screen."
                      : "These will appear on your wheel. You can edit them anytime.")
                     .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.4))
+                    .foregroundStyle(.primary.opacity(0.4))
                     .multilineTextAlignment(.center)
             }
             .padding(.horizontal, 28)
@@ -1002,7 +1002,7 @@ private struct ReviewStep: View {
                 Button(action: onBack) {
                     Text("Go back")
                         .font(.system(size: 14))
-                        .foregroundStyle(.white.opacity(0.35))
+                        .foregroundStyle(.primary.opacity(0.35))
                 }
                 .buttonStyle(.plain)
             }
@@ -1014,7 +1014,7 @@ private struct ReviewStep: View {
     private func sectionHeader(_ text: String) -> some View {
         Text(text.uppercased())
             .font(.system(size: 10, weight: .semibold, design: .monospaced))
-            .foregroundStyle(.white.opacity(0.3))
+            .foregroundStyle(.primary.opacity(0.3))
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.leading, 4)
     }
@@ -1033,20 +1033,20 @@ private struct ReviewStep: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(goal.name)
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                 Text(goal.isHealthBacked
                      ? "Apple Health · \(Int(goal.healthKitTarget ?? 0)) \(goal.healthKitUnit ?? "")"
                      : "\(goal.items.count) item\(goal.items.count == 1 ? "" : "s")")
                     .font(.system(size: 11))
-                    .foregroundStyle(.white.opacity(0.35))
+                    .foregroundStyle(.primary.opacity(0.35))
             }
             Spacer()
             Button { pendingGoals.removeAll { $0.id == goal.id } } label: {
-                Image(systemName: "trash").font(.system(size: 14)).foregroundStyle(.white.opacity(0.25))
+                Image(systemName: "trash").font(.system(size: 14)).foregroundStyle(.primary.opacity(0.25))
             }.buttonStyle(.plain)
         }
         .padding(12)
-        .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 14))
+        .background(Color.appRowFill, in: RoundedRectangle(cornerRadius: 14))
     }
 
     @ViewBuilder
@@ -1069,18 +1069,18 @@ private struct ReviewStep: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(goal.name)
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                 Text(kindLabel)
                     .font(.system(size: 11))
-                    .foregroundStyle(.white.opacity(0.35))
+                    .foregroundStyle(.primary.opacity(0.35))
             }
             Spacer()
             Button { pendingLifeGoals.removeAll { $0.id == goal.id } } label: {
-                Image(systemName: "trash").font(.system(size: 14)).foregroundStyle(.white.opacity(0.25))
+                Image(systemName: "trash").font(.system(size: 14)).foregroundStyle(.primary.opacity(0.25))
             }.buttonStyle(.plain)
         }
         .padding(12)
-        .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 14))
+        .background(Color.appRowFill, in: RoundedRectangle(cornerRadius: 14))
     }
 
     private var emptyState: some View {
@@ -1088,7 +1088,7 @@ private struct ReviewStep: View {
             Spacer()
             Image(systemName: "tray")
                 .font(.system(size: 40))
-                .foregroundStyle(.white.opacity(0.15))
+                .foregroundStyle(.primary.opacity(0.15))
             Spacer()
         }
     }
@@ -1100,10 +1100,10 @@ private func ctaButton(_ title: String, action: @escaping () -> Void) -> some Vi
     Button(action: action) {
         Text(title)
             .font(.system(size: 16, weight: .semibold))
-            .foregroundStyle(.black)
+            .foregroundStyle(Color.appBg)
             .frame(maxWidth: .infinity)
             .frame(height: 54)
-            .background(.white)
+            .background(.primary)
             .cornerRadius(16)
     }
     .buttonStyle(.plain)
@@ -1113,9 +1113,9 @@ private func backButton(action: @escaping () -> Void) -> some View {
     Button(action: action) {
         Image(systemName: "chevron.left")
             .font(.system(size: 16, weight: .semibold))
-            .foregroundStyle(.white.opacity(0.6))
+            .foregroundStyle(.primary.opacity(0.6))
             .frame(width: 54, height: 54)
-            .background(.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 16))
+            .background(Color.appRowFill, in: RoundedRectangle(cornerRadius: 16))
     }
     .buttonStyle(.plain)
 }

@@ -136,7 +136,7 @@ struct ProfileView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color(red: 0.04, green: 0.04, blue: 0.09).ignoresSafeArea()
+                Color.appBg.ignoresSafeArea()
                 RadialGradient(
                     colors: [accent.opacity(0.14), .clear],
                     center: .top, startRadius: 0, endRadius: 420
@@ -162,7 +162,7 @@ struct ProfileView: View {
                 ToolbarItem(placement: .topBarLeading) {
                     Text("profile")
                         .font(.system(size: 13, weight: .medium, design: .monospaced))
-                        .foregroundStyle(.white.opacity(0.28))
+                        .foregroundStyle(.primary.opacity(0.28))
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") { dismiss() }
@@ -204,11 +204,11 @@ struct ProfileView: View {
             if initials.isEmpty {
                 Image(systemName: "person.fill")
                     .font(.system(size: 38, weight: .light))
-                    .foregroundStyle(.white.opacity(0.7))
+                    .foregroundStyle(.primary.opacity(0.7))
             } else {
                 Text(initials)
                     .font(.system(size: 32, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
             }
         }
         .animation(.spring(response: 0.35), value: colorIdx)
@@ -224,7 +224,7 @@ struct ProfileView: View {
                         Circle().fill(Self.palette[i]).frame(width: 22, height: 22)
                         if colorIdx == i {
                             Circle()
-                                .stroke(.white, lineWidth: 2)
+                                .stroke(.primary, lineWidth: 2)
                                 .frame(width: 28, height: 28)
                         }
                     }
@@ -237,7 +237,7 @@ struct ProfileView: View {
     private var nameField: some View {
         TextField("Your name", text: $name)
             .font(.system(size: 22, weight: .bold, design: .rounded))
-            .foregroundStyle(.white)
+            .foregroundStyle(.primary)
             .multilineTextAlignment(.center)
             .focused($nameFocused)
             .submitLabel(.done)
@@ -246,7 +246,7 @@ struct ProfileView: View {
     private var taglineField: some View {
         TextField("Add a tagline…", text: $tagline)
             .font(.system(size: 13, design: .monospaced))
-            .foregroundStyle(.white.opacity(0.4))
+            .foregroundStyle(.primary.opacity(0.4))
             .multilineTextAlignment(.center)
             .submitLabel(.done)
     }
@@ -261,8 +261,8 @@ struct ProfileView: View {
                     label: "today's balance",
                     color: scoreColor(balanceScore)
                 )
-                statPill(value: "\(dailyGoalCount)", label: "daily goals",  color: .white.opacity(0.55))
-                statPill(value: "\(lifeGoalCount)",  label: "life goals",   color: .white.opacity(0.55))
+                statPill(value: "\(dailyGoalCount)", label: "daily goals",  color: .primary.opacity(0.55))
+                statPill(value: "\(lifeGoalCount)",  label: "life goals",   color: .primary.opacity(0.55))
             }
             .padding(.vertical, 4)
             .listRowBackground(Color.clear)
@@ -277,13 +277,13 @@ struct ProfileView: View {
                 .foregroundStyle(color)
             Text(label)
                 .font(.system(size: 10, weight: .medium, design: .monospaced))
-                .foregroundStyle(.white.opacity(0.3))
+                .foregroundStyle(.primary.opacity(0.3))
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 14)
-        .background(.white.opacity(0.055))
+        .background(Color.appRowFill)
         .clipShape(RoundedRectangle(cornerRadius: 14))
     }
 
@@ -361,7 +361,7 @@ struct ProfileView: View {
 
         } header: { sectionHeader("Personal") }
         .listRowBackground(rowBG)
-        .listRowSeparatorTint(.white.opacity(0.08))
+        .listRowSeparatorTint(Color.appRowFill)
     }
 
     // MARK: - Preferences section
@@ -381,11 +381,11 @@ struct ProfileView: View {
                                 Text(t.label)
                                     .font(.system(size: 11, weight: .medium))
                             }
-                            .foregroundStyle(theme == t ? .white : .white.opacity(0.4))
+                            .foregroundStyle(Color.primary.opacity(theme == t ? 1.0 : 0.4))
                             .padding(.horizontal, 9)
                             .padding(.vertical, 6)
                             .background(
-                                theme == t ? accent.opacity(0.28) : Color.white.opacity(0.06),
+                                theme == t ? accent.opacity(0.28) : Color.appRowFill,
                                 in: Capsule()
                             )
                         }
@@ -427,7 +427,7 @@ struct ProfileView: View {
             }
         } header: { sectionHeader("Preferences") }
         .listRowBackground(rowBG)
-        .listRowSeparatorTint(.white.opacity(0.08))
+        .listRowSeparatorTint(Color.appRowFill)
     }
 
     // MARK: - About section
@@ -442,7 +442,7 @@ struct ProfileView: View {
             }
         } header: { sectionHeader("About") }
         .listRowBackground(rowBG)
-        .listRowSeparatorTint(.white.opacity(0.08))
+        .listRowSeparatorTint(Color.appRowFill)
     }
 
     // MARK: - Health section
@@ -466,7 +466,7 @@ struct ProfileView: View {
                         } else {
                             Text("Set up")
                                 .font(.system(size: 13))
-                                .foregroundStyle(.white.opacity(0.35))
+                                .foregroundStyle(.primary.opacity(0.35))
                         }
                     }
                 }
@@ -490,7 +490,7 @@ struct ProfileView: View {
                     if syncingHealth {
                         ProgressView()
                             .scaleEffect(0.75)
-                            .tint(.white.opacity(0.4))
+                            .tint(.primary.opacity(0.4))
                     } else if syncDone {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 14))
@@ -506,7 +506,7 @@ struct ProfileView: View {
             .disabled(syncingHealth)
         } header: { sectionHeader("Health") }
         .listRowBackground(rowBG)
-        .listRowSeparatorTint(.white.opacity(0.08))
+        .listRowSeparatorTint(Color.appRowFill)
     }
 
     // MARK: - Account section
@@ -517,7 +517,7 @@ struct ProfileView: View {
                 profileRow(icon: "envelope.badge.shield.half.filled", label: "Account") {
                     Text(email)
                         .font(.system(size: 12, design: .monospaced))
-                        .foregroundStyle(.white.opacity(0.4))
+                        .foregroundStyle(.primary.opacity(0.4))
                         .lineLimit(1)
                 }
             }
@@ -553,7 +553,7 @@ struct ProfileView: View {
             .buttonStyle(.plain)
         } header: { sectionHeader("Account") }
         .listRowBackground(rowBG)
-        .listRowSeparatorTint(.white.opacity(0.08))
+        .listRowSeparatorTint(Color.appRowFill)
         .confirmationDialog("Reset all goals?", isPresented: $showResetConfirm, titleVisibility: .visible) {
             Button("Reset Goals", role: .destructive) {
                 // Drop keyboard focus first — if the name field was active, the keyboard
@@ -580,13 +580,13 @@ struct ProfileView: View {
     // MARK: - Layout helpers
 
     private var rowBG: some View {
-        Color.white.opacity(0.05)
+        Color.appRowFill
     }
 
     private func sectionHeader(_ text: String) -> some View {
         Text(text)
             .font(.system(size: 10, weight: .semibold, design: .monospaced))
-            .foregroundStyle(.white.opacity(0.28))
+            .foregroundStyle(.primary.opacity(0.28))
             .textCase(nil)
     }
 
@@ -598,7 +598,7 @@ struct ProfileView: View {
     ) -> some View {
         HStack {
             Label {
-                Text(label).foregroundStyle(.white.opacity(0.8))
+                Text(label).foregroundStyle(.primary.opacity(0.8))
             } icon: {
                 Image(systemName: icon)
                     .foregroundStyle(accent)
@@ -622,7 +622,7 @@ private extension Text {
     func profileValue(set: Bool) -> some View {
         self
             .font(.system(size: 13, design: .monospaced))
-            .foregroundStyle(set ? .white.opacity(0.55) : .white.opacity(0.22))
+            .foregroundStyle(Color.primary.opacity(set ? 0.55 : 0.22))
     }
 }
 

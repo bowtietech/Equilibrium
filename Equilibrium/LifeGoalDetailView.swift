@@ -7,7 +7,7 @@ struct LifeGoalDetailView: View {
 
     var body: some View {
         ZStack {
-            Color(red: 0.04, green: 0.04, blue: 0.09).ignoresSafeArea()
+            Color.appBg.ignoresSafeArea()
             VStack {
                 RadialGradient(
                     colors: [goal.color.opacity(0.18), .clear],
@@ -61,7 +61,7 @@ private struct MetricGoalDetail: View {
                                color: goal.color,
                                direction: data.direction)
                     .frame(height: 140)
-                    .listRowBackground(Color.white.opacity(0.04))
+                    .listRowBackground(Color.appRowFill.opacity(0.7))
                     .listRowSeparator(.hidden)
             } header: {
                 sectionHeader("Progress over time")
@@ -72,15 +72,15 @@ private struct MetricGoalDetail: View {
                     HStack {
                         Text(dateLabel(entry.date))
                             .font(.system(size: 13, design: .monospaced))
-                            .foregroundStyle(.white.opacity(0.5))
+                            .foregroundStyle(.primary.opacity(0.5))
                         Spacer()
                         Text("\(data.unitPrefix)\(data.formatted(entry.value))\(data.unit)")
                             .font(.system(size: 14, weight: .medium, design: .monospaced))
                             .foregroundStyle(goal.color.opacity(0.9))
                     }
                     .padding(.vertical, 4)
-                    .listRowBackground(Color.white.opacity(0.04))
-                    .listRowSeparatorTint(.white.opacity(0.07))
+                    .listRowBackground(Color.appRowFill.opacity(0.7))
+                    .listRowSeparatorTint(Color.appRowFill)
                 }
             } header: {
                 sectionHeader("History")
@@ -152,12 +152,12 @@ private struct MetricGoalDetail: View {
 
                 Text("\(Int(data.progress * 100))% of the way there")
                     .font(.system(size: 13, design: .monospaced))
-                    .foregroundStyle(.white.opacity(0.35))
+                    .foregroundStyle(.primary.opacity(0.35))
             }
             if !editingTitle {
                 Text("tap name to rename")
                     .font(.system(size: 10, design: .monospaced))
-                    .foregroundStyle(.white.opacity(0.15))
+                    .foregroundStyle(.primary.opacity(0.15))
             }
         }
         .frame(maxWidth: .infinity)
@@ -175,38 +175,38 @@ private struct MetricGoalDetail: View {
         VStack(spacing: 3) {
             Text(value)
                 .font(.system(size: 18, weight: .bold, design: .rounded))
-                .foregroundStyle(.white.opacity(0.9))
+                .foregroundStyle(.primary.opacity(0.9))
             Text(label)
                 .font(.system(size: 10, design: .monospaced))
-                .foregroundStyle(.white.opacity(0.3))
+                .foregroundStyle(.primary.opacity(0.3))
         }
         .padding(.horizontal, 16).padding(.vertical, 10)
-        .background(Color.white.opacity(0.06))
+        .background(Color.appRowFill)
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
     private var logSheet: some View {
         VStack(spacing: 20) {
-            Capsule().fill(.white.opacity(0.2))
+            Capsule().fill(.primary.opacity(0.2))
                 .frame(width: 36, height: 4).padding(.top, 8)
 
             Text("Log \(goal.name)")
                 .font(.system(size: 18, weight: .semibold, design: .rounded))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
 
             VStack(alignment: .leading, spacing: 6) {
                 Text("Current value (\(data.unit.trimmingCharacters(in: .whitespaces)))")
                     .font(.system(size: 11, design: .monospaced))
-                    .foregroundStyle(.white.opacity(0.4))
+                    .foregroundStyle(.primary.opacity(0.4))
 
                 TextField(data.currentLabel, text: $logText)
                     .keyboardType(.decimalPad)
                     .textFieldStyle(.plain)
                     .font(.system(size: 24, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                     .tint(goal.color)
                     .padding()
-                    .background(Color.white.opacity(0.08))
+                    .background(Color.appRowFill)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
             }
 
@@ -222,7 +222,7 @@ private struct MetricGoalDetail: View {
             }
             .disabled(Double(logText) == nil)
             .font(.system(size: 16, weight: .semibold))
-            .foregroundStyle(Double(logText) != nil ? goal.color : .white.opacity(0.3))
+            .foregroundStyle(Double(logText) != nil ? goal.color : .primary.opacity(0.3))
             .frame(maxWidth: .infinity)
             .padding(.vertical, 15)
             .background(goal.color.opacity(Double(logText) != nil ? 0.15 : 0.06))
@@ -232,7 +232,7 @@ private struct MetricGoalDetail: View {
         }
         .padding(.horizontal, 24)
         .presentationDetents([.height(300)])
-        .presentationBackground(Color(red: 0.08, green: 0.08, blue: 0.13))
+        .presentationBackground(Color.appSurface)
         .presentationCornerRadius(24)
     }
 
@@ -341,8 +341,8 @@ private struct ProjectGoalDetail: View {
                 ForEach(subgoalBinding) { $parent in
                     // ── Area (parent) row ──────────────────────────────────────────
                     areaRow($parent)
-                        .listRowBackground(Color.white.opacity(0.05))
-                        .listRowSeparatorTint(.white.opacity(0.07))
+                        .listRowBackground(Color.appRowFill)
+                        .listRowSeparatorTint(Color.appRowFill)
                         .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
                         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                             Button(role: .destructive) {
@@ -356,8 +356,8 @@ private struct ProjectGoalDetail: View {
                     if expandedIDs.contains(parent.id) {
                         ForEach($parent.children) { $child in
                             childRow($child, color: goal.color)
-                                .listRowBackground(Color.white.opacity(0.025))
-                                .listRowSeparatorTint(.white.opacity(0.05))
+                                .listRowBackground(Color.appRowFill.opacity(0.5))
+                                .listRowSeparatorTint(Color.appRowFill)
                                 .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
                                 .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                     Button(role: .destructive) {
@@ -379,7 +379,7 @@ private struct ProjectGoalDetail: View {
                     Spacer()
                     Text("swipe to delete")
                         .font(.system(size: 10, design: .monospaced))
-                        .foregroundStyle(.white.opacity(0.18))
+                        .foregroundStyle(.primary.opacity(0.18))
                         .textCase(nil)
                         .padding(.trailing, 20)
                 }
@@ -414,7 +414,7 @@ private struct ProjectGoalDetail: View {
             } label: {
                 Image(systemName: sub.isComplete ? "checkmark.circle.fill" : "circle")
                     .font(.system(size: 22))
-                    .foregroundStyle(sub.isComplete ? goal.color : .white.opacity(0.28))
+                    .foregroundStyle(sub.isComplete ? goal.color : .primary.opacity(0.28))
                     .animation(.spring(response: 0.2), value: sub.isComplete)
             }
             .buttonStyle(.plain)
@@ -424,7 +424,7 @@ private struct ProjectGoalDetail: View {
                     HStack(spacing: 6) {
                         TextField("Area name", text: $nodeBuffer)
                             .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.primary)
                             .tint(goal.color)
                             .focused($nodeFocused)
                             .onSubmit { commitNode(parent) }
@@ -435,8 +435,8 @@ private struct ProjectGoalDetail: View {
                 } else {
                     Text(sub.name)
                         .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(sub.isComplete ? .white.opacity(0.4) : .white.opacity(0.9))
-                        .strikethrough(sub.isComplete, color: .white.opacity(0.2))
+                        .foregroundStyle(Color.primary.opacity(sub.isComplete ? 0.4 : 0.9))
+                        .strikethrough(sub.isComplete, color: .primary.opacity(0.2))
                         .onTapGesture {
                             nodeBuffer = sub.name
                             editingNodeID = sub.id
@@ -472,7 +472,7 @@ private struct ProjectGoalDetail: View {
             if hasChildren {
                 Image(systemName: "chevron.right")
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.35))
+                    .foregroundStyle(.primary.opacity(0.35))
                     .rotationEffect(.degrees(isExpanded ? 90 : 0))
                     .animation(.spring(response: 0.28), value: isExpanded)
             }
@@ -514,7 +514,7 @@ private struct ProjectGoalDetail: View {
             } label: {
                 Image(systemName: c.isComplete ? "checkmark.circle.fill" : "circle")
                     .font(.system(size: 20))
-                    .foregroundStyle(c.isComplete ? color : .white.opacity(0.28))
+                    .foregroundStyle(c.isComplete ? color : .primary.opacity(0.28))
                     .animation(.spring(response: 0.2), value: c.isComplete)
             }
             .buttonStyle(.plain)
@@ -523,7 +523,7 @@ private struct ProjectGoalDetail: View {
                 HStack(spacing: 6) {
                     TextField("Sub-goal name", text: $nodeBuffer)
                         .font(.system(size: 14))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                         .tint(color)
                         .focused($nodeFocused)
                         .onSubmit { commitChildNode(child) }
@@ -534,8 +534,8 @@ private struct ProjectGoalDetail: View {
             } else {
                 Text(c.name)
                     .font(.system(size: 14))
-                    .foregroundStyle(c.isComplete ? .white.opacity(0.35) : .white.opacity(0.82))
-                    .strikethrough(c.isComplete, color: .white.opacity(0.2))
+                    .foregroundStyle(Color.primary.opacity(c.isComplete ? 0.35 : 0.82))
+                    .strikethrough(c.isComplete, color: .primary.opacity(0.2))
                     .onTapGesture {
                         nodeBuffer = c.name
                         editingNodeID = c.id
@@ -602,11 +602,11 @@ private struct ProjectGoalDetail: View {
                 let done  = subgoals.filter { $0.progress >= 1.0 }.count
                 Text("\(done) of \(subgoals.count) areas complete · \(Int(goal.progress * 100))%")
                     .font(.system(size: 13, design: .monospaced))
-                    .foregroundStyle(.white.opacity(0.35))
+                    .foregroundStyle(.primary.opacity(0.35))
                 if !editingTitle {
                     Text("tap name to rename")
                         .font(.system(size: 10, design: .monospaced))
-                        .foregroundStyle(.white.opacity(0.15))
+                        .foregroundStyle(.primary.opacity(0.15))
                 }
             }
         }
@@ -625,15 +625,15 @@ private struct ProjectGoalDetail: View {
         let isChild = addParentID != nil
         let title   = isChild ? "Add Sub-Goal" : "Add Area"
         return VStack(spacing: 20) {
-            Capsule().fill(.white.opacity(0.2))
+            Capsule().fill(.primary.opacity(0.2))
                 .frame(width: 36, height: 4).padding(.top, 8)
             Text(title)
                 .font(.system(size: 18, weight: .semibold, design: .rounded))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
             TextField("Name", text: $newName)
                 .textFieldStyle(.plain).font(.system(size: 16))
-                .foregroundStyle(.white).tint(goal.color)
-                .padding().background(Color.white.opacity(0.08))
+                .foregroundStyle(.primary).tint(goal.color)
+                .padding().background(Color.appRowFill)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
             Button("Add") {
                 let trimmed = newName.trimmingCharacters(in: .whitespaces)
@@ -651,7 +651,7 @@ private struct ProjectGoalDetail: View {
             }
             .disabled(newName.trimmingCharacters(in: .whitespaces).isEmpty)
             .font(.system(size: 16, weight: .semibold))
-            .foregroundStyle(newName.isEmpty ? .white.opacity(0.3) : goal.color)
+            .foregroundStyle(newName.isEmpty ? .primary.opacity(0.3) : goal.color)
             .frame(maxWidth: .infinity).padding(.vertical, 15)
             .background(goal.color.opacity(newName.isEmpty ? 0.06 : 0.15))
             .clipShape(RoundedRectangle(cornerRadius: 13))
@@ -659,7 +659,7 @@ private struct ProjectGoalDetail: View {
         }
         .padding(.horizontal, 24)
         .presentationDetents([.height(260)])
-        .presentationBackground(Color(red: 0.08, green: 0.08, blue: 0.13))
+        .presentationBackground(Color.appSurface)
         .presentationCornerRadius(24)
     }
 }
@@ -669,7 +669,7 @@ private struct ProjectGoalDetail: View {
 private func sectionHeader(_ title: String) -> some View {
     Text(title)
         .font(.system(size: 11, weight: .semibold, design: .monospaced))
-        .foregroundStyle(.white.opacity(0.3))
+        .foregroundStyle(.primary.opacity(0.3))
         .textCase(nil)
         .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 6, trailing: 0))
 }

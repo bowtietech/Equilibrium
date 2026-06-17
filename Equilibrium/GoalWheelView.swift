@@ -5,6 +5,8 @@ struct GoalWheelView: View {
     @Binding var activeIndex: Int
     var onActiveTap: () -> Void = {}
 
+    @Environment(\.colorScheme) private var colorScheme
+
     @State private var rotation: Double = 0
     @State private var dragDelta: Double = 0
 
@@ -218,24 +220,25 @@ struct GoalWheelView: View {
             layer.addFilter(.shadow(color: activeColor, radius: 10, x: 0, y: 0))
             layer.fill(Path(ellipseIn: hubRect), with: .color(activeColor.opacity(0.85)))
         }
-        // White core dot
+        // Core dot — white on dark, dark on light
         let coreR: CGFloat = hubR * 0.4
         let coreRect = CGRect(x: center.x - coreR, y: center.y - coreR, width: coreR * 2, height: coreR * 2)
-        ctx.fill(Path(ellipseIn: coreRect), with: .color(.white.opacity(0.9)))
+        let coreDot: Color = colorScheme == .dark ? .white.opacity(0.9) : Color.primary.opacity(0.9)
+        ctx.fill(Path(ellipseIn: coreRect), with: .color(coreDot))
 
         // Top indicator pip
         let pipR: CGFloat = max(2.5, radius * 0.022)
         let pipY  = center.y - radius - pipR * 2.5
         let pipRect = CGRect(x: center.x - pipR, y: pipY - pipR, width: pipR * 2, height: pipR * 2)
-        ctx.fill(Path(ellipseIn: pipRect), with: .color(.white.opacity(0.35)))
+        let pipColor: Color = colorScheme == .dark ? .white.opacity(0.35) : Color.primary.opacity(0.35)
+        ctx.fill(Path(ellipseIn: pipRect), with: .color(pipColor))
     }
 
     private func drawRing(ctx: GraphicsContext, center: CGPoint, radius: CGFloat, opacity: Double) {
         let rect = CGRect(x: center.x - radius, y: center.y - radius,
                           width: radius * 2, height: radius * 2)
-        ctx.stroke(Path(ellipseIn: rect),
-                   with: .color(.white.opacity(opacity)),
-                   lineWidth: 1)
+        let ringColor: Color = colorScheme == .dark ? .white.opacity(opacity) : Color.primary.opacity(opacity)
+        ctx.stroke(Path(ellipseIn: rect), with: .color(ringColor), lineWidth: 1)
     }
 
     private func point(from center: CGPoint, angle: Double, distance: CGFloat) -> CGPoint {

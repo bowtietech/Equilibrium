@@ -19,7 +19,7 @@ struct HealthImportView: View {
 
     var body: some View {
         ZStack {
-            Color(red: 0.04, green: 0.04, blue: 0.09).ignoresSafeArea()
+            Color.appBg.ignoresSafeArea()
 
             VStack(spacing: 0) {
                 // Header
@@ -27,9 +27,9 @@ struct HealthImportView: View {
                     Button { dismiss() } label: {
                         Image(systemName: "xmark")
                             .font(.system(size: 14, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.5))
+                            .foregroundStyle(.primary.opacity(0.5))
                             .padding(10)
-                            .background(.white.opacity(0.06), in: Circle())
+                            .background(Color.appRowFill, in: Circle())
                     }
                     .buttonStyle(.plain)
 
@@ -37,7 +37,7 @@ struct HealthImportView: View {
 
                     Text("Apple Health")
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
 
                     Spacer()
                     Color.clear.frame(width: 34, height: 34)
@@ -50,7 +50,7 @@ struct HealthImportView: View {
                     authPrompt
                 } else if isLoading {
                     Spacer()
-                    ProgressView().tint(.white.opacity(0.4))
+                    ProgressView().tint(.primary.opacity(0.4))
                     Spacer()
                 } else {
                     ScrollView {
@@ -65,7 +65,7 @@ struct HealthImportView: View {
                 }
             }
         }
-        .preferredColorScheme(.dark)
+        //.preferredColorScheme(.dark) — handled by RootView
         .task {
             if !health.isAuthorized {
                 await health.requestAuthorization()
@@ -89,21 +89,21 @@ struct HealthImportView: View {
                 .foregroundStyle(.red.opacity(0.8))
             Text("Connect Apple Health")
                 .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
             Text("Equilibrium will read your health data to automatically track your daily goals.")
                 .multilineTextAlignment(.center)
                 .font(.system(size: 14))
-                .foregroundStyle(.white.opacity(0.55))
+                .foregroundStyle(.primary.opacity(0.55))
                 .padding(.horizontal, 32)
             Button {
                 Task { await health.requestAuthorization(); await fetchTodayValues() }
             } label: {
                 Text("Allow Access")
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(.black)
+                    .foregroundStyle(Color.appBg)
                     .frame(maxWidth: .infinity)
                     .frame(height: 52)
-                    .background(.white)
+                    .background(.primary)
                     .cornerRadius(14)
             }
             .buttonStyle(.plain)
@@ -120,7 +120,7 @@ struct HealthImportView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text(category.uppercased())
                 .font(.system(size: 10, weight: .semibold, design: .monospaced))
-                .foregroundStyle(.white.opacity(0.35))
+                .foregroundStyle(.primary.opacity(0.35))
                 .padding(.leading, 4)
 
             VStack(spacing: 8) {
@@ -150,10 +150,10 @@ struct HealthImportView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(template.name)
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                 Text(value > 0 ? "Today: \(formatted)" : "No data yet")
                     .font(.system(size: 12))
-                    .foregroundStyle(.white.opacity(0.4))
+                    .foregroundStyle(.primary.opacity(0.4))
             }
 
             Spacer()
@@ -167,14 +167,14 @@ struct HealthImportView: View {
                     configuring = template
                 } label: {
                     Image(systemName: "plus.circle.fill")
-                        .foregroundStyle(.white.opacity(0.3))
+                        .foregroundStyle(.primary.opacity(0.3))
                         .font(.system(size: 20))
                 }
                 .buttonStyle(.plain)
             }
         }
         .padding(14)
-        .background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 14))
+        .background(Color.appRowFill.opacity(0.7), in: RoundedRectangle(cornerRadius: 14))
     }
 
     // MARK: - Helpers
@@ -233,7 +233,7 @@ private struct HealthGoalConfigSheet: View {
 
     var body: some View {
         ZStack {
-            Color(red: 0.04, green: 0.04, blue: 0.09).ignoresSafeArea()
+            Color.appBg.ignoresSafeArea()
 
             VStack(spacing: 28) {
                 // Icon
@@ -249,7 +249,7 @@ private struct HealthGoalConfigSheet: View {
 
                 Text("Set your daily target")
                     .font(.system(size: 20, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
 
                 // Target stepper
                 VStack(spacing: 8) {
@@ -258,11 +258,11 @@ private struct HealthGoalConfigSheet: View {
                         VStack(spacing: 2) {
                             Text(formattedTarget)
                                 .font(.system(size: 36, weight: .bold, design: .rounded))
-                                .foregroundStyle(.white)
+                                .foregroundStyle(.primary)
                                 .monospacedDigit()
                             Text(template.unitLabel)
                                 .font(.system(size: 13))
-                                .foregroundStyle(.white.opacity(0.4))
+                                .foregroundStyle(.primary.opacity(0.4))
                         }
                         .frame(minWidth: 120)
                         stepButton(icon: "plus", action: { target = target + stepSize })
@@ -271,12 +271,12 @@ private struct HealthGoalConfigSheet: View {
                     if todayValue > 0 {
                         Text("Today: \(Int(todayValue)) \(template.unitLabel)")
                             .font(.system(size: 12))
-                            .foregroundStyle(.white.opacity(0.3))
+                            .foregroundStyle(.primary.opacity(0.3))
                     }
                 }
                 .padding(.vertical, 20)
                 .frame(maxWidth: .infinity)
-                .background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 18))
+                .background(Color.appRowFill.opacity(0.7), in: RoundedRectangle(cornerRadius: 18))
                 .padding(.horizontal, 24)
 
                 Spacer()
@@ -300,16 +300,16 @@ private struct HealthGoalConfigSheet: View {
             }
         }
         .presentationDetents([.medium])
-        .preferredColorScheme(.dark)
+        //.preferredColorScheme(.dark) — handled by RootView
     }
 
     private func stepButton(icon: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: icon)
                 .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.7))
+                .foregroundStyle(.primary.opacity(0.7))
                 .frame(width: 44, height: 44)
-                .background(.white.opacity(0.08), in: Circle())
+                .background(Color.appRowFill, in: Circle())
         }
         .buttonStyle(.plain)
     }

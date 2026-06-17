@@ -55,13 +55,13 @@ struct RootView: View {
 
     private var splashView: some View {
         ZStack {
-            Color(red: 0.04, green: 0.04, blue: 0.09).ignoresSafeArea()
+            Color.appBg.ignoresSafeArea()
             VStack(spacing: 24) {
                 Text("equilibrium")
                     .font(.system(size: 22, weight: .medium, design: .monospaced))
-                    .foregroundStyle(.white.opacity(0.35))
+                    .foregroundStyle(.primary.opacity(0.35))
                 ProgressView()
-                    .tint(.white.opacity(0.25))
+                    .tint(.primary.opacity(0.25))
             }
         }
     }

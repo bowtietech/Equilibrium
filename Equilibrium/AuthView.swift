@@ -21,7 +21,7 @@ struct AuthView: View {
 
     var body: some View {
         ZStack {
-            Color(red: 0.04, green: 0.04, blue: 0.09).ignoresSafeArea()
+            Color.appBg.ignoresSafeArea()
             RadialGradient(
                 colors: [accent.opacity(0.16), .clear],
                 center: .top, startRadius: 0, endRadius: 460
@@ -39,7 +39,7 @@ struct AuthView: View {
                     .transition(.opacity)
             }
         }
-        .preferredColorScheme(.dark)
+        //.preferredColorScheme(.dark) — handled by RootView
         .animation(.spring(response: 0.35), value: pendingEmail == nil)
         .animation(.spring(response: 0.3), value: isSignUp)
     }
@@ -54,10 +54,10 @@ struct AuthView: View {
                 VStack(spacing: 8) {
                     Text("equilibrium")
                         .font(.system(size: 30, weight: .medium, design: .monospaced))
-                        .foregroundStyle(.white.opacity(0.88))
+                        .foregroundStyle(.primary.opacity(0.88))
                     Text("track your balance")
                         .font(.system(size: 13, design: .monospaced))
-                        .foregroundStyle(.white.opacity(0.3))
+                        .foregroundStyle(.primary.opacity(0.3))
                 }
 
                 HStack(spacing: 2) {
@@ -65,7 +65,7 @@ struct AuthView: View {
                     modeTab("Create Account", selected:  isSignUp) { isSignUp = true  }
                 }
                 .padding(3)
-                .background(.white.opacity(0.06))
+                .background(Color.appRowFill)
                 .clipShape(Capsule())
                 .padding(.horizontal, 32)
 
@@ -102,11 +102,11 @@ struct AuthView: View {
 
     private var divider: some View {
         HStack(spacing: 12) {
-            Rectangle().fill(.white.opacity(0.1)).frame(height: 1)
+            Rectangle().fill(Color.appSeparator).frame(height: 1)
             Text("or")
                 .font(.system(size: 12, design: .monospaced))
-                .foregroundStyle(.white.opacity(0.25))
-            Rectangle().fill(.white.opacity(0.1)).frame(height: 1)
+                .foregroundStyle(.secondary)
+            Rectangle().fill(Color.appSeparator).frame(height: 1)
         }
         .padding(.horizontal, 24)
     }
@@ -204,10 +204,10 @@ struct AuthView: View {
             VStack(spacing: 10) {
                 Text("Check your email")
                     .font(.system(size: 24, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                 Text("We sent a confirmation link to")
                     .font(.system(size: 14, design: .monospaced))
-                    .foregroundStyle(.white.opacity(0.45))
+                    .foregroundStyle(.primary.opacity(0.45))
                 Text(email)
                     .font(.system(size: 14, weight: .medium, design: .monospaced))
                     .foregroundStyle(accent)
@@ -215,7 +215,7 @@ struct AuthView: View {
 
             Text("Open the link in the email to activate your account,\nthen come back and sign in.")
                 .font(.system(size: 13, design: .monospaced))
-                .foregroundStyle(.white.opacity(0.3))
+                .foregroundStyle(.primary.opacity(0.3))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
 
@@ -229,7 +229,7 @@ struct AuthView: View {
                 } label: {
                     Text("Sign In")
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                         .frame(maxWidth: .infinity)
                         .frame(height: 52)
                         .background(accent)
@@ -243,7 +243,7 @@ struct AuthView: View {
                 } label: {
                     Text("Back")
                         .font(.system(size: 14))
-                        .foregroundStyle(.white.opacity(0.3))
+                        .foregroundStyle(.primary.opacity(0.3))
                 }
                 .buttonStyle(.plain)
             }
@@ -258,9 +258,9 @@ struct AuthView: View {
         Button(action: action) {
             Text(title)
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(selected ? .white : .white.opacity(0.4))
+                .foregroundStyle(selected ? .primary : Color.primary.opacity(0.4))
                 .padding(.horizontal, 18).padding(.vertical, 8)
-                .background(selected ? .white.opacity(0.12) : .clear)
+                .background(selected ? Color.appRowFill.opacity(2) : .clear)
                 .clipShape(Capsule())
         }
         .buttonStyle(.plain)
@@ -273,7 +273,7 @@ struct AuthView: View {
     ) -> some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
-                .foregroundStyle(.white.opacity(0.32))
+                .foregroundStyle(.primary.opacity(0.32))
                 .frame(width: 20)
 
             if isSecure {
@@ -291,9 +291,9 @@ struct AuthView: View {
                     .onSubmit { focused = .password }
             }
         }
-        .foregroundStyle(.white)
+        .foregroundStyle(.primary)
         .padding(.horizontal, 16).padding(.vertical, 15)
-        .background(.white.opacity(0.06))
+        .background(Color.appRowFill)
         .clipShape(RoundedRectangle(cornerRadius: 13))
         .overlay(
             RoundedRectangle(cornerRadius: 13)
@@ -307,11 +307,11 @@ struct AuthView: View {
             ZStack {
                 RoundedRectangle(cornerRadius: 14).fill(accent).frame(height: 52)
                 if isLoading {
-                    ProgressView().tint(.white)
+                    ProgressView().tint(.primary)
                 } else {
                     Text(isSignUp ? "Create Account" : "Sign In")
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                 }
             }
         }

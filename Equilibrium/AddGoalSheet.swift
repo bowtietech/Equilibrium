@@ -11,7 +11,7 @@ struct AddGoalSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color(red: 0.04, green: 0.04, blue: 0.09).ignoresSafeArea()
+                Color.appBg.ignoresSafeArea()
                 RadialGradient(
                     colors: [Color(red: 0.30, green: 0.20, blue: 0.60).opacity(0.25), .clear],
                     center: .top, startRadius: 0, endRadius: 400
@@ -24,18 +24,18 @@ struct AddGoalSheet: View {
                     AddLifeContent()
                 }
             }
-            .preferredColorScheme(.dark)
+            //.preferredColorScheme(.dark) — handled by RootView
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Text(mode == .daily ? "manage daily goals" : "manage life goals")
                         .font(.system(size: 13, weight: .medium, design: .monospaced))
-                        .foregroundStyle(.white.opacity(0.28))
+                        .foregroundStyle(.primary.opacity(0.28))
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") { dismiss() }
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                 }
             }
         }
@@ -65,7 +65,7 @@ private struct HKTargetConfigSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color(red: 0.04, green: 0.04, blue: 0.09).ignoresSafeArea()
+                Color.appBg.ignoresSafeArea()
 
                 VStack(spacing: 28) {
                     // Icon + name
@@ -80,17 +80,17 @@ private struct HKTargetConfigSheet: View {
                         }
                         Text(template.name)
                             .font(.system(size: 18, weight: .semibold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(.primary)
                         if template.isLowerBetter {
                             Text("You'll be at 100% when your reading reaches this value or below.")
                                 .font(.system(size: 13))
-                                .foregroundStyle(.white.opacity(0.45))
+                                .foregroundStyle(.primary.opacity(0.45))
                                 .multilineTextAlignment(.center)
                                 .padding(.horizontal, 32)
                         } else {
                             Text("Set your daily target for this metric.")
                                 .font(.system(size: 13))
-                                .foregroundStyle(.white.opacity(0.45))
+                                .foregroundStyle(.primary.opacity(0.45))
                                 .multilineTextAlignment(.center)
                         }
                     }
@@ -99,22 +99,22 @@ private struct HKTargetConfigSheet: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("TARGET (\(template.unitLabel.uppercased()))")
                             .font(.system(size: 10, weight: .semibold, design: .monospaced))
-                            .foregroundStyle(.white.opacity(0.3))
+                            .foregroundStyle(.primary.opacity(0.3))
 
                         HStack {
                             TextField("", text: $targetText)
                                 .keyboardType(.decimalPad)
                                 .font(.system(size: 28, weight: .bold, design: .rounded))
-                                .foregroundStyle(.white)
+                                .foregroundStyle(.primary)
                                 .tint(template.colorData.value)
                                 .multilineTextAlignment(.center)
                             Text(template.unitLabel)
                                 .font(.system(size: 16, weight: .medium))
-                                .foregroundStyle(.white.opacity(0.5))
+                                .foregroundStyle(.primary.opacity(0.5))
                         }
                         .padding(.horizontal, 20)
                         .padding(.vertical, 18)
-                        .background(.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 14))
+                        .background(Color.appRowFill, in: RoundedRectangle(cornerRadius: 14))
                     }
                     .padding(.horizontal, 32)
 
@@ -126,13 +126,13 @@ private struct HKTargetConfigSheet: View {
                     } label: {
                         Label("Add goal", systemImage: "plus")
                             .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(parsedTarget != nil ? .white : .white.opacity(0.3))
+                            .foregroundStyle(parsedTarget != nil ? Color.primary : Color.primary.opacity(0.3))
                             .frame(maxWidth: .infinity)
                             .frame(height: 52)
                             .background(
                                 parsedTarget != nil
                                     ? template.colorData.value.opacity(0.28)
-                                    : Color.white.opacity(0.06),
+                                    : Color.appRowFill,
                                 in: RoundedRectangle(cornerRadius: 14)
                             )
                     }
@@ -144,12 +144,12 @@ private struct HKTargetConfigSheet: View {
                 }
                 .padding(.top, 40)
             }
-            .preferredColorScheme(.dark)
+            //.preferredColorScheme(.dark) — handled by RootView
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Cancel") { dismiss() }
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(.primary.opacity(0.6))
                 }
             }
         }
@@ -236,11 +236,11 @@ private struct AddDailyContent: View {
                     Button { withAnimation(.spring(response: 0.3)) { tab = t } } label: {
                         Text(t.rawValue)
                             .font(.system(size: 13, weight: .semibold))
-                            .foregroundStyle(tab == t ? .white : .white.opacity(0.35))
+                            .foregroundStyle(tab == t ? Color.primary : Color.primary.opacity(0.35))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 10)
                             .padding(.horizontal, 12)
-                            .background(tab == t ? Color.white.opacity(0.12) : Color.clear,
+                            .background(tab == t ? Color.appRowFill.opacity(2) : Color.clear,
                                         in: RoundedRectangle(cornerRadius: 10))
                     }
                     .buttonStyle(.plain)
@@ -248,7 +248,7 @@ private struct AddDailyContent: View {
             }
             .padding(4)
         }
-        .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 14))
+        .background(Color.appRowFill, in: RoundedRectangle(cornerRadius: 14))
         .padding(.horizontal, 24)
     }
 
@@ -265,13 +265,13 @@ private struct AddDailyContent: View {
                             manageRow(goal: $goal)
                         }
                     }
-                    .background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
+                    .background(Color.appRowFill.opacity(0.7), in: RoundedRectangle(cornerRadius: 16))
                     .padding(.horizontal, 20)
                     .padding(.top, 4)
 
                     Text("Tap to toggle goals on or off the wheel. Their data is always preserved.")
                         .font(.system(size: 12))
-                        .foregroundStyle(.white.opacity(0.28))
+                        .foregroundStyle(.primary.opacity(0.28))
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 32)
                         .padding(.top, 16)
@@ -296,22 +296,22 @@ private struct AddDailyContent: View {
                         .frame(width: 38, height: 38)
                     Image(systemName: g.icon)
                         .font(.system(size: 15))
-                        .foregroundStyle(g.isActive ? g.colorData.value : .white.opacity(0.3))
+                        .foregroundStyle(g.isActive ? g.colorData.value : .primary.opacity(0.3))
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text(g.name)
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(g.isActive ? .white : .white.opacity(0.4))
+                        .foregroundStyle(g.isActive ? Color.primary : Color.primary.opacity(0.4))
                     Text(g.isActive ? "On wheel" : "Off wheel")
                         .font(.system(size: 11))
                         .foregroundStyle(g.isActive
                                          ? g.colorData.value.opacity(0.7)
-                                         : .white.opacity(0.22))
+                                         : .primary.opacity(0.22))
                 }
                 Spacer()
                 Image(systemName: g.isActive ? "checkmark.circle.fill" : "circle")
                     .font(.system(size: 22))
-                    .foregroundStyle(g.isActive ? g.colorData.value : .white.opacity(0.2))
+                    .foregroundStyle(g.isActive ? g.colorData.value : .primary.opacity(0.2))
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
@@ -328,7 +328,7 @@ private struct AddDailyContent: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text(cat.uppercased())
                             .font(.system(size: 10, weight: .semibold, design: .monospaced))
-                            .foregroundStyle(.white.opacity(0.3))
+                            .foregroundStyle(.primary.opacity(0.3))
                             .padding(.leading, 4)
 
                         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
@@ -375,20 +375,20 @@ private struct AddDailyContent: View {
                 HStack {
                     Image(systemName: sg.icon)
                         .font(.system(size: 18))
-                        .foregroundStyle(onWheel ? sg.colorData.value : .white.opacity(offWheel ? 0.3 : 0.6))
+                        .foregroundStyle(onWheel ? sg.colorData.value : .primary.opacity(offWheel ? 0.3 : 0.6))
                     Spacer()
                     Image(systemName: onWheel ? "checkmark.circle.fill"
                           : (offWheel ? "minus.circle" : "plus.circle"))
                         .foregroundStyle(onWheel ? sg.colorData.value
-                                         : (offWheel ? .white.opacity(0.3) : .white.opacity(0.25)))
+                                         : (offWheel ? Color.primary.opacity(0.3) : Color.primary.opacity(0.25)))
                         .font(.system(size: 16))
                 }
                 Text(sg.name)
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(onWheel ? .white : .white.opacity(0.55))
+                    .foregroundStyle(onWheel ? Color.primary : Color.primary.opacity(0.55))
                 Text("\(sg.itemNames.count) items")
                     .font(.system(size: 11))
-                    .foregroundStyle(.white.opacity(0.35))
+                    .foregroundStyle(.primary.opacity(0.35))
             }
             .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -396,7 +396,7 @@ private struct AddDailyContent: View {
                 RoundedRectangle(cornerRadius: 14)
                     .fill(onWheel
                           ? sg.colorData.value.opacity(0.18)
-                          : Color.white.opacity(0.05))
+                          : Color.appRowFill)
                     .overlay(
                         RoundedRectangle(cornerRadius: 14)
                             .stroke(onWheel ? sg.colorData.value.opacity(0.5) : Color.clear,
@@ -415,7 +415,7 @@ private struct AddDailyContent: View {
             if !health.isAvailable {
                 centeredNote("HealthKit is not available on this device.")
             } else if loadingHealth {
-                VStack { Spacer(); ProgressView().tint(.white.opacity(0.4)); Spacer() }
+                VStack { Spacer(); ProgressView().tint(.primary.opacity(0.4)); Spacer() }
             } else {
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 8) {
@@ -466,25 +466,25 @@ private struct AddDailyContent: View {
                         .frame(width: 42, height: 42)
                     Image(systemName: template.icon)
                         .font(.system(size: 17))
-                        .foregroundStyle(onWheel ? template.colorData.value : .white.opacity(0.4))
+                        .foregroundStyle(onWheel ? template.colorData.value : .primary.opacity(0.4))
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text(template.name)
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(onWheel ? .white : .white.opacity(0.65))
+                        .foregroundStyle(onWheel ? Color.primary : Color.primary.opacity(0.65))
                     Text(value > 0
                          ? "Today: \(formattedHK(value, unit: template.unitLabel))"
                          : (template.isLowerBetter
                             ? "Set your target \(template.unitLabel)"
                             : "Target: \(formattedHK(template.defaultTarget, unit: template.unitLabel))"))
                         .font(.system(size: 11))
-                        .foregroundStyle(.white.opacity(0.38))
+                        .foregroundStyle(.primary.opacity(0.38))
                 }
                 Spacer()
                 Image(systemName: onWheel  ? "checkmark.circle.fill"
                       : (offWheel ? "minus.circle" : "plus.circle"))
                     .foregroundStyle(onWheel  ? template.colorData.value
-                                     : (offWheel ? .white.opacity(0.3) : .white.opacity(0.25)))
+                                     : (offWheel ? Color.primary.opacity(0.3) : Color.primary.opacity(0.25)))
                     .font(.system(size: 20))
             }
             .padding(12)
@@ -492,7 +492,7 @@ private struct AddDailyContent: View {
                 RoundedRectangle(cornerRadius: 14)
                     .fill(onWheel
                           ? template.colorData.value.opacity(0.12)
-                          : Color.white.opacity(0.04))
+                          : Color.appRowFill.opacity(0.7))
                     .overlay(
                         RoundedRectangle(cornerRadius: 14)
                             .stroke(onWheel ? template.colorData.value.opacity(0.4) : Color.clear,
@@ -513,10 +513,10 @@ private struct AddDailyContent: View {
                 fieldLabel("Goal name")
                 TextField("e.g. Morning Routine", text: $customName)
                     .font(.system(size: 15))
-                    .foregroundStyle(.white)
-                    .tint(.white)
+                    .foregroundStyle(.primary)
+                    .tint(.primary)
                     .padding(14)
-                    .background(.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 12))
+                    .background(Color.appRowFill, in: RoundedRectangle(cornerRadius: 12))
 
                 fieldLabel("Icon")
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: 10) {
@@ -526,13 +526,13 @@ private struct AddDailyContent: View {
                                 .font(.system(size: 17))
                                 .foregroundStyle(customIcon == sym
                                                  ? autoColor.value
-                                                 : .white.opacity(0.4))
+                                                 : .primary.opacity(0.4))
                                 .frame(width: 40, height: 40)
                                 .background(
                                     RoundedRectangle(cornerRadius: 10)
                                         .fill(customIcon == sym
                                               ? autoColor.value.opacity(0.18)
-                                              : Color.white.opacity(0.05))
+                                              : Color.appRowFill)
                                 )
                         }
                         .buttonStyle(.plain)
@@ -553,11 +553,11 @@ private struct AddDailyContent: View {
                 } label: {
                     Label("Add goal", systemImage: "plus")
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(canAdd ? .white : .white.opacity(0.25))
+                        .foregroundStyle(canAdd ? Color.primary : Color.primary.opacity(0.25))
                         .frame(maxWidth: .infinity)
                         .frame(height: 48)
                         .background(
-                            canAdd ? autoColor.value.opacity(0.28) : Color.white.opacity(0.06),
+                            canAdd ? autoColor.value.opacity(0.28) : Color.appRowFill,
                             in: RoundedRectangle(cornerRadius: 12)
                         )
                 }
@@ -574,7 +574,7 @@ private struct AddDailyContent: View {
     private func fieldLabel(_ text: String) -> some View {
         Text(text.uppercased())
             .font(.system(size: 10, weight: .semibold, design: .monospaced))
-            .foregroundStyle(.white.opacity(0.3))
+            .foregroundStyle(.primary.opacity(0.3))
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 
@@ -583,10 +583,10 @@ private struct AddDailyContent: View {
             Spacer()
             Image(systemName: "exclamationmark.circle")
                 .font(.system(size: 36))
-                .foregroundStyle(.white.opacity(0.3))
+                .foregroundStyle(.primary.opacity(0.3))
             Text(text)
                 .font(.system(size: 14))
-                .foregroundStyle(.white.opacity(0.4))
+                .foregroundStyle(.primary.opacity(0.4))
                 .multilineTextAlignment(.center)
             Spacer()
         }
@@ -598,10 +598,10 @@ private struct AddDailyContent: View {
             Spacer()
             Image(systemName: "tray")
                 .font(.system(size: 36))
-                .foregroundStyle(.white.opacity(0.2))
+                .foregroundStyle(.primary.opacity(0.2))
             Text(text)
                 .font(.system(size: 14))
-                .foregroundStyle(.white.opacity(0.35))
+                .foregroundStyle(.primary.opacity(0.35))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
             Spacer()
@@ -637,11 +637,11 @@ private struct AddDailyContent: View {
                 .foregroundStyle(.green)
             Text("\"\(name)\" added to your wheel")
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 11)
-        .background(.white.opacity(0.1), in: Capsule())
+        .background(Color.appRowFill.opacity(1.6), in: Capsule())
         .padding(.bottom, 4)
     }
 }
@@ -698,17 +698,17 @@ private struct AddLifeContent: View {
                 Button { withAnimation(.spring(response: 0.3)) { tab = t } } label: {
                     Text(t.rawValue)
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(tab == t ? .white : .white.opacity(0.35))
+                        .foregroundStyle(tab == t ? Color.primary : Color.primary.opacity(0.35))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
-                        .background(tab == t ? Color.white.opacity(0.12) : Color.clear,
+                        .background(tab == t ? Color.appRowFill.opacity(2) : Color.clear,
                                     in: RoundedRectangle(cornerRadius: 10))
                 }
                 .buttonStyle(.plain)
             }
         }
         .padding(4)
-        .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 14))
+        .background(Color.appRowFill, in: RoundedRectangle(cornerRadius: 14))
         .padding(.horizontal, 24)
     }
 
@@ -725,13 +725,13 @@ private struct AddLifeContent: View {
                             manageRow(goal: $goal)
                         }
                     }
-                    .background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 16))
+                    .background(Color.appRowFill.opacity(0.7), in: RoundedRectangle(cornerRadius: 16))
                     .padding(.horizontal, 20)
                     .padding(.top, 4)
 
                     Text("Tap to toggle goals on or off the wheel. Their data is always preserved.")
                         .font(.system(size: 12))
-                        .foregroundStyle(.white.opacity(0.28))
+                        .foregroundStyle(.primary.opacity(0.28))
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 32)
                         .padding(.top, 16)
@@ -756,22 +756,22 @@ private struct AddLifeContent: View {
                         .frame(width: 38, height: 38)
                     Image(systemName: g.icon)
                         .font(.system(size: 15))
-                        .foregroundStyle(g.isActive ? g.colorData.value : .white.opacity(0.3))
+                        .foregroundStyle(g.isActive ? g.colorData.value : .primary.opacity(0.3))
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text(g.name)
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(g.isActive ? .white : .white.opacity(0.4))
+                        .foregroundStyle(g.isActive ? Color.primary : Color.primary.opacity(0.4))
                     Text(g.isActive ? "On wheel" : "Off wheel")
                         .font(.system(size: 11))
                         .foregroundStyle(g.isActive
                                          ? g.colorData.value.opacity(0.7)
-                                         : .white.opacity(0.22))
+                                         : .primary.opacity(0.22))
                 }
                 Spacer()
                 Image(systemName: g.isActive ? "checkmark.circle.fill" : "circle")
                     .font(.system(size: 22))
-                    .foregroundStyle(g.isActive ? g.colorData.value : .white.opacity(0.2))
+                    .foregroundStyle(g.isActive ? g.colorData.value : .primary.opacity(0.2))
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
@@ -788,7 +788,7 @@ private struct AddLifeContent: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text(cat.uppercased())
                             .font(.system(size: 10, weight: .semibold, design: .monospaced))
-                            .foregroundStyle(.white.opacity(0.3))
+                            .foregroundStyle(.primary.opacity(0.3))
                             .padding(.leading, 4)
 
                         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
@@ -831,26 +831,26 @@ private struct AddLifeContent: View {
                 HStack {
                     Image(systemName: sg.icon)
                         .font(.system(size: 18))
-                        .foregroundStyle(onWheel ? sg.colorData.value : .white.opacity(offWheel ? 0.3 : 0.6))
+                        .foregroundStyle(onWheel ? sg.colorData.value : .primary.opacity(offWheel ? 0.3 : 0.6))
                     Spacer()
                     Image(systemName: onWheel ? "checkmark.circle.fill"
                           : (offWheel ? "minus.circle" : "plus.circle"))
                         .foregroundStyle(onWheel ? sg.colorData.value
-                                         : (offWheel ? .white.opacity(0.3) : .white.opacity(0.25)))
+                                         : (offWheel ? Color.primary.opacity(0.3) : Color.primary.opacity(0.25)))
                         .font(.system(size: 16))
                 }
                 Text(sg.name)
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(onWheel ? .white : .white.opacity(0.55))
+                    .foregroundStyle(onWheel ? Color.primary : Color.primary.opacity(0.55))
                 Text(kindLabel)
                     .font(.system(size: 11))
-                    .foregroundStyle(.white.opacity(0.35))
+                    .foregroundStyle(.primary.opacity(0.35))
             }
             .padding(14)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 RoundedRectangle(cornerRadius: 14)
-                    .fill(onWheel ? sg.colorData.value.opacity(0.18) : Color.white.opacity(0.05))
+                    .fill(onWheel ? sg.colorData.value.opacity(0.18) : Color.appRowFill)
                     .overlay(RoundedRectangle(cornerRadius: 14)
                         .stroke(onWheel ? sg.colorData.value.opacity(0.5) : Color.clear,
                                 lineWidth: 1))
@@ -868,9 +868,9 @@ private struct AddLifeContent: View {
             VStack(spacing: 20) {
                 fieldLabel("Goal name")
                 TextField("e.g. Build my dream home", text: $customName)
-                    .font(.system(size: 15)).foregroundStyle(.white).tint(.white)
+                    .font(.system(size: 15)).foregroundStyle(.primary).tint(.primary)
                     .padding(14)
-                    .background(.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 12))
+                    .background(Color.appRowFill, in: RoundedRectangle(cornerRadius: 12))
 
                 fieldLabel("Icon")
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: 10) {
@@ -879,12 +879,12 @@ private struct AddLifeContent: View {
                             Image(systemName: sym).font(.system(size: 17))
                                 .foregroundStyle(customIcon == sym
                                                  ? autoColor.value
-                                                 : .white.opacity(0.4))
+                                                 : .primary.opacity(0.4))
                                 .frame(width: 40, height: 40)
                                 .background(RoundedRectangle(cornerRadius: 10)
                                     .fill(customIcon == sym
                                           ? autoColor.value.opacity(0.18)
-                                          : Color.white.opacity(0.05)))
+                                          : Color.appRowFill))
                         }.buttonStyle(.plain)
                     }
                 }
@@ -903,10 +903,10 @@ private struct AddLifeContent: View {
                 } label: {
                     Label("Add life goal", systemImage: "plus")
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(canAdd ? .white : .white.opacity(0.25))
+                        .foregroundStyle(canAdd ? Color.primary : Color.primary.opacity(0.25))
                         .frame(maxWidth: .infinity).frame(height: 48)
                         .background(
-                            canAdd ? autoColor.value.opacity(0.28) : Color.white.opacity(0.06),
+                            canAdd ? autoColor.value.opacity(0.28) : Color.appRowFill,
                             in: RoundedRectangle(cornerRadius: 12))
                 }
                 .buttonStyle(.plain)
@@ -922,7 +922,7 @@ private struct AddLifeContent: View {
     private func fieldLabel(_ text: String) -> some View {
         Text(text.uppercased())
             .font(.system(size: 10, weight: .semibold, design: .monospaced))
-            .foregroundStyle(.white.opacity(0.3))
+            .foregroundStyle(.primary.opacity(0.3))
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 
@@ -931,10 +931,10 @@ private struct AddLifeContent: View {
             Spacer()
             Image(systemName: "tray")
                 .font(.system(size: 36))
-                .foregroundStyle(.white.opacity(0.2))
+                .foregroundStyle(.primary.opacity(0.2))
             Text(text)
                 .font(.system(size: 14))
-                .foregroundStyle(.white.opacity(0.35))
+                .foregroundStyle(.primary.opacity(0.35))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
             Spacer()
@@ -955,11 +955,11 @@ private struct AddLifeContent: View {
                 .foregroundStyle(.green)
             Text("\"\(name)\" added to your wheel")
                 .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 11)
-        .background(.white.opacity(0.1), in: Capsule())
+        .background(Color.appRowFill.opacity(1.6), in: Capsule())
         .padding(.bottom, 4)
     }
 }

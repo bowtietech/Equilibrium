@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AA10001300000001 /* AppColors.swift in Sources (Watch) */ = {isa = PBXBuildFile; fileRef = AA10001100000001 /* AppColors.swift */; };
+		AA10001200000001 /* AppColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA10001100000001 /* AppColors.swift */; };
 		BB0000000000000000000001 /* Goal.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000001 /* Goal.swift */; };
 		BB0000000000000000000002 /* GoalWheelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000002 /* GoalWheelView.swift */; };
 		BB0000000000000000000003 /* EquilibriumApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000003 /* EquilibriumApp.swift */; };
@@ -60,6 +62,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		AA10001100000001 /* AppColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppColors.swift; sourceTree = "<group>"; };
 		612E48252FE23FFF00909F34 /* Equilibrium Watch App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "Equilibrium Watch App.entitlements"; sourceTree = "<group>"; };
 		AA0000000000000000000001 /* Goal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Goal.swift; sourceTree = "<group>"; };
 		AA0000000000000000000002 /* GoalWheelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalWheelView.swift; sourceTree = "<group>"; };
@@ -147,6 +150,7 @@
 				AA0000000000000000000017 /* HealthImportView.swift */,
 			AA0000000000000000000018 /* OnboardingView.swift */,
 			AA0000000000000000000019 /* AddGoalSheet.swift */,
+				AA10001100000001 /* AppColors.swift */,
 			AA0000000000000000000005 /* Assets.xcassets */,
 			);
 			path = Equilibrium;
@@ -279,6 +283,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				BB0000000000000000000001 /* Goal.swift in Sources */,
+				AA10001300000001 /* AppColors.swift in Sources (Watch) */,
 				BB000000000000000000000D /* LifeGoal.swift in Sources */,
 				BB0000000000000000000002 /* GoalWheelView.swift in Sources */,
 				BB0000000000000000000003 /* EquilibriumApp.swift in Sources */,
@@ -294,6 +299,7 @@
 				BB0000000000000000000018 /* HealthImportView.swift in Sources */,
 				BB0000000000000000000019 /* OnboardingView.swift in Sources */,
 			BB000000000000000000001A /* AddGoalSheet.swift in Sources */,
+				AA10001200000001 /* AppColors.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

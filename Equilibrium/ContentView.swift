@@ -41,7 +41,7 @@ struct ContentView: View {
 
     private var active: WheelEntry {
         guard !entries.isEmpty else {
-            return WheelEntry(id: UUID(), name: "", color: .white, icon: "circle", progress: 0)
+            return WheelEntry(id: UUID(), name: "", color: .primary, icon: "circle", progress: 0)
         }
         return entries[min(activeIndex, entries.count - 1)]
     }
@@ -61,7 +61,7 @@ struct ContentView: View {
                     scoreCard
                 }
             }
-            .preferredColorScheme(.dark)
+            //.preferredColorScheme(.dark) — handled by RootView
             .navigationBarHidden(true)
             .navigationDestination(isPresented: $navigateToDetail) {
                 detailDestination
@@ -130,7 +130,7 @@ struct ContentView: View {
 
     private var background: some View {
         ZStack {
-            Color(red: 0.04, green: 0.04, blue: 0.09)
+            Color.appBg
             RadialGradient(
                 colors: [active.color.opacity(0.11), .clear],
                 center: .center, startRadius: 0, endRadius: 320
@@ -146,7 +146,7 @@ struct ContentView: View {
         HStack {
             Text("equilibrium")
                 .font(.system(size: 13, weight: .medium, design: .monospaced))
-                .foregroundStyle(.white.opacity(0.28))
+                .foregroundStyle(.primary.opacity(0.28))
 
             Spacer()
 
@@ -154,9 +154,9 @@ struct ContentView: View {
                 Button { showAddGoal = true } label: {
                     Image(systemName: "slider.horizontal.3")
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.75))
+                        .foregroundStyle(.primary.opacity(0.75))
                         .frame(width: 32, height: 32)
-                        .background(.white.opacity(0.09), in: Circle())
+                        .background(Color.appRowFill.opacity(1.5), in: Circle())
                 }
                 .buttonStyle(.plain)
 
@@ -170,7 +170,7 @@ struct ContentView: View {
                         if profileName.isEmpty {
                             Image(systemName: "person.fill")
                                 .font(.system(size: 14, weight: .light))
-                                .foregroundStyle(.white.opacity(0.6))
+                                .foregroundStyle(.primary.opacity(0.6))
                         } else {
                             let words = profileName.trimmingCharacters(in: .whitespaces).split(separator: " ")
                             let ini: String = words.count > 1
@@ -178,7 +178,7 @@ struct ContentView: View {
                                 : String(words.first?.prefix(2) ?? "").uppercased()
                             Text(ini)
                                 .font(.system(size: 12, weight: .bold, design: .rounded))
-                                .foregroundStyle(.white)
+                                .foregroundStyle(.primary)
                         }
                     }
                 }
@@ -204,17 +204,17 @@ struct ContentView: View {
                         Text(m.rawValue)
                             .font(.system(size: 13, weight: .medium))
                     }
-                    .foregroundStyle(mode == m ? .white : .white.opacity(0.4))
+                    .foregroundStyle(Color.primary.opacity(mode == m ? 1.0 : 0.4))
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)
-                    .background(mode == m ? Color.white.opacity(0.12) : .clear)
+                    .background(mode == m ? Color.appRowFill.opacity(2) : .clear)
                     .clipShape(Capsule())
                 }
                 .buttonStyle(.plain)
             }
         }
         .padding(3)
-        .background(Color.white.opacity(0.06))
+        .background(Color.appRowFill)
         .clipShape(Capsule())
         .padding(.horizontal, 24)
         .padding(.top, 10)
@@ -249,14 +249,14 @@ struct ContentView: View {
                 }
                 Text("today's balance")
                     .font(.system(size: 10, weight: .medium, design: .monospaced))
-                    .foregroundStyle(.white.opacity(0.28))
+                    .foregroundStyle(.primary.opacity(0.28))
             }
 
             Spacer()
 
             Text(todayLabel)
                 .font(.system(size: 11, design: .monospaced))
-                .foregroundStyle(.white.opacity(0.2))
+                .foregroundStyle(.primary.opacity(0.2))
         }
         .cardStyle()
     }
@@ -280,7 +280,7 @@ struct ContentView: View {
                 }
                 Text("overall life progress")
                     .font(.system(size: 10, weight: .medium, design: .monospaced))
-                    .foregroundStyle(.white.opacity(0.28))
+                    .foregroundStyle(.primary.opacity(0.28))
             }
 
             Spacer()
@@ -293,7 +293,7 @@ struct ContentView: View {
                 Text("\(projectCount) project")
             }
             .font(.system(size: 10, design: .monospaced))
-            .foregroundStyle(.white.opacity(0.2))
+            .foregroundStyle(.primary.opacity(0.2))
         }
         .cardStyle()
     }
@@ -356,40 +356,40 @@ struct ContentView: View {
             if activeDaily.isEmpty {
                 Text("no goals on wheel")
                     .font(.system(size: 14, design: .monospaced))
-                    .foregroundStyle(.white.opacity(0.25))
+                    .foregroundStyle(.primary.opacity(0.25))
             } else {
                 let g = activeDaily[min(activeIndex, activeDaily.count - 1)]
                 if g.isHealthBacked, let p = health.progressById[g.id] {
                     Text("\(Int(p * 100))%")
                         .font(.system(size: 14, design: .monospaced))
-                        .foregroundStyle(.white.opacity(0.45))
+                        .foregroundStyle(.primary.opacity(0.45))
                 } else if let tp = g.todayProgress {
                     Text("\(Int(tp * 100))% today")
                         .font(.system(size: 14, design: .monospaced))
-                        .foregroundStyle(.white.opacity(0.45))
+                        .foregroundStyle(.primary.opacity(0.45))
                 } else {
                     Text("no goals today")
                         .font(.system(size: 14, design: .monospaced))
-                        .foregroundStyle(.white.opacity(0.25))
+                        .foregroundStyle(.primary.opacity(0.25))
                 }
             }
         case .life:
             if activeLife.isEmpty {
                 Text("no life goals on wheel")
                     .font(.system(size: 14, design: .monospaced))
-                    .foregroundStyle(.white.opacity(0.25))
+                    .foregroundStyle(.primary.opacity(0.25))
             } else {
                 let lg = activeLife[min(activeIndex, activeLife.count - 1)]
                 switch lg.kind {
                 case .metric(let m):
                     Text("\(m.currentLabel) → \(m.targetLabel)")
                         .font(.system(size: 14, design: .monospaced))
-                        .foregroundStyle(.white.opacity(0.45))
+                        .foregroundStyle(.primary.opacity(0.45))
                 case .project(let sgs):
                     let done = sgs.filter { $0.progress >= 1.0 }.count
                     Text("\(done)/\(sgs.count) areas complete")
                         .font(.system(size: 14, design: .monospaced))
-                        .foregroundStyle(.white.opacity(0.45))
+                        .foregroundStyle(.primary.opacity(0.45))
                 }
             }
         }
@@ -408,7 +408,7 @@ struct ContentView: View {
     private var hint: some View {
         Text("drag to spin  ·  tap to select  ·  tap active to open")
             .font(.system(size: 11, weight: .light, design: .monospaced))
-            .foregroundStyle(.white.opacity(0.16))
+            .foregroundStyle(.primary.opacity(0.16))
             .padding(.top, 8)
             .padding(.bottom, 20)
     }
@@ -417,7 +417,7 @@ struct ContentView: View {
 
     private func ringView(progress: Double, color: Color) -> some View {
         ZStack {
-            Circle().stroke(.white.opacity(0.1), lineWidth: 5)
+            Circle().stroke(Color.appSeparator, lineWidth: 5)
             Circle()
                 .trim(from: 0, to: progress)
                 .stroke(color, style: StrokeStyle(lineWidth: 5, lineCap: .round))
@@ -445,7 +445,7 @@ private extension View {
         self
             .padding(.horizontal, 18)
             .padding(.vertical, 12)
-            .background(.white.opacity(0.05))
+            .background(Color.appRowFill)
             .clipShape(RoundedRectangle(cornerRadius: 16))
             .padding(.horizontal, 20)
             .padding(.top, 10)
