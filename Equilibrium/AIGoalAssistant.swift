@@ -210,6 +210,14 @@ final class AIGoalAssistant: ObservableObject {
                 store.goals[gi].items.append(GoalItem(name: iName))
             }
 
+        case "add_subgoal":
+            guard let gName = r.goalName, let sName = r.subgoalName ?? r.itemName ?? r.name else { return }
+            if let gi = store.lifeGoals.firstIndex(where: { $0.name.matches(gName) }),
+               case .project(var subs) = store.lifeGoals[gi].kind {
+                subs.append(SubGoal(name: sName))
+                store.lifeGoals[gi].kind = .project(subs)
+            }
+
         case "remove_goal":
             // Deactivate the goal (preserves data, removes it from the wheel)
             guard let gName = r.goalName else { return }
@@ -291,17 +299,22 @@ final class AIGoalAssistant: ObservableObject {
         Mark all items in a daily goal done/undone:
         {"action":"complete_goal","message":"...","goal_name":"...","complete":true}
 
-        Add an item to an existing daily goal:
+        Add an item to an existing DAILY goal:
         {"action":"add_item","message":"...","goal_name":"...","item_name":"..."}
+
+        Add a subgoal to an existing LIFE goal (project type only):
+        {"action":"add_subgoal","message":"...","goal_name":"...","subgoal_name":"..."}
 
         Create a new daily goal:
         {"action":"create_daily_goal","message":"...","name":"...","icon":"figure.walk","items":["item 1"]}
 
-        Create a new measurable life goal:
+        Create a BRAND NEW measurable life goal (only when the goal doesn't already exist):
         {"action":"create_life_goal_metric","message":"...","name":"...","icon":"chart.line.uptrend.xyaxis","current_value":0,"target_value":10,"unit":"kg","is_lower_better":false}
 
-        Create a new project life goal:
+        Create a BRAND NEW project life goal (only when the goal doesn't already exist):
         {"action":"create_life_goal_project","message":"...","name":"...","icon":"house.fill","subgoals":["Step 1"]}
+
+        IMPORTANT: If the user says "add X to [existing goal]", use add_item or add_subgoal — never create a new goal.
 
         Remove a goal from the wheel (deactivates it, data is kept):
         {"action":"remove_goal","message":"...","goal_name":"..."}
