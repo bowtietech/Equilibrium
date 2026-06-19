@@ -210,6 +210,15 @@ final class AIGoalAssistant: ObservableObject {
                 store.goals[gi].items.append(GoalItem(name: iName))
             }
 
+        case "remove_goal":
+            // Deactivate the goal (preserves data, removes it from the wheel)
+            guard let gName = r.goalName else { return }
+            if let gi = store.goals.firstIndex(where: { $0.name.matches(gName) }) {
+                store.goals[gi].isActive = false
+            } else if let gi = store.lifeGoals.firstIndex(where: { $0.name.matches(gName) }) {
+                store.lifeGoals[gi].isActive = false
+            }
+
         case "rename_goal":
             guard let gName = r.goalName, let newName = r.newName else { return }
             if let gi = store.goals.firstIndex(where: { $0.name.matches(gName) }) {
@@ -293,6 +302,9 @@ final class AIGoalAssistant: ObservableObject {
 
         Create a new project life goal:
         {"action":"create_life_goal_project","message":"...","name":"...","icon":"house.fill","subgoals":["Step 1"]}
+
+        Remove a goal from the wheel (deactivates it, data is kept):
+        {"action":"remove_goal","message":"...","goal_name":"..."}
 
         Rename a goal:
         {"action":"rename_goal","message":"...","goal_name":"...","new_name":"..."}
