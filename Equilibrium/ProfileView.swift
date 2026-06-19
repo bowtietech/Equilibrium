@@ -466,17 +466,17 @@ struct ProfileView: View {
                 }
             }
 
-            if openAIKey.isEmpty {
-                HStack(spacing: 8) {
-                    Image(systemName: "info.circle")
-                        .foregroundStyle(.secondary)
-                        .font(.system(size: 12))
-                    Text("Enter your key to enable the AI voice assistant (mic button on the main screen).")
-                        .font(.system(size: 12))
-                        .foregroundStyle(.secondary)
-                }
-                .listRowBackground(rowBG)
+            HStack(spacing: 8) {
+                Image(systemName: "info.circle")
+                    .foregroundStyle(.secondary)
+                    .font(.system(size: 12))
+                Text(openAIKey.isEmpty
+                     ? "Using shared service key. Add your own key to override."
+                     : "Using your personal key.")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
             }
+            .listRowBackground(rowBG)
         } header: { sectionHeader("AI Voice Assistant") }
         .listRowBackground(rowBG)
         .listRowSeparatorTint(Color.appRowFill)
