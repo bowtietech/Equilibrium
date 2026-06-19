@@ -218,6 +218,35 @@ final class AIGoalAssistant: ObservableObject {
                 store.lifeGoals[gi].kind = .project(subs)
             }
 
+        case "merge_goals":
+            // goal_name = source (absorbed), new_name = target (kept)
+            guard let srcName = r.goalName, let dstName = r.newName else { return }
+
+            // Life goals
+            if let si = store.lifeGoals.firstIndex(where: { $0.name.matches(srcName) }),
+               let ti = store.lifeGoals.firstIndex(where: { $0.name.matches(dstName) }),
+               si != ti {
+                switch (store.lifeGoals[ti].kind, store.lifeGoals[si].kind) {
+                case (.project(var dstSubs), .project(let srcSubs)):
+                    dstSubs.append(contentsOf: srcSubs)
+                    store.lifeGoals[ti].kind = .project(dstSubs)
+                case (.metric(var dstData), .metric(let srcData)):
+                    let merged = (dstData.history + srcData.history).sorted { $0.date < $1.date }
+                    dstData.history = merged
+                    store.lifeGoals[ti].kind = .metric(dstData)
+                default:
+                    break   // mixed types — just deactivate source below
+                }
+                store.lifeGoals[si].isActive = false
+
+            // Daily goals
+            } else if let si = store.goals.firstIndex(where: { $0.name.matches(srcName) }),
+                      let ti = store.goals.firstIndex(where: { $0.name.matches(dstName) }),
+                      si != ti {
+                store.goals[ti].items.append(contentsOf: store.goals[si].items)
+                store.goals[si].isActive = false
+            }
+
         case "remove_goal":
             // Deactivate the goal (preserves data, removes it from the wheel)
             guard let gName = r.goalName else { return }
@@ -315,6 +344,9 @@ final class AIGoalAssistant: ObservableObject {
         {"action":"create_life_goal_project","message":"...","name":"...","icon":"house.fill","subgoals":["Step 1"]}
 
         IMPORTANT: If the user says "add X to [existing goal]", use add_item or add_subgoal — never create a new goal.
+
+        Merge/consolidate one goal INTO another (moves subgoals or items to target, removes source):
+        {"action":"merge_goals","message":"...","goal_name":"source goal name","new_name":"target goal name"}
 
         Remove a goal from the wheel (deactivates it, data is kept):
         {"action":"remove_goal","message":"...","goal_name":"..."}
