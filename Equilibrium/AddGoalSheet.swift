@@ -414,30 +414,36 @@ private struct AddDailyContent: View {
     // MARK: Manage tab
 
     private var manageTab: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: 0) {
-                if store.goals.isEmpty {
+        Group {
+            if store.goals.isEmpty {
+                ScrollView(showsIndicators: false) {
                     emptyManageNote("No daily goals yet. Add some from the other tabs.")
-                } else {
-                    VStack(spacing: 1) {
-                        ForEach($store.goals) { $goal in
-                            manageRow(goal: $goal)
-                        }
+                }
+            } else {
+                List {
+                    ForEach($store.goals) { $goal in
+                        manageRow(goal: $goal)
+                            .listRowBackground(Color.appRowFill.opacity(0.7))
+                            .listRowSeparatorTint(Color.appSurface.opacity(0.6))
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                Button(role: .destructive) {
+                                    store.goals.removeAll { $0.id == goal.id }
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
                     }
-                    .background(Color.appRowFill.opacity(0.7), in: RoundedRectangle(cornerRadius: 16))
-                    .padding(.horizontal, 20)
-                    .padding(.top, 4)
 
-                    Text("Tap to toggle goals on or off the wheel. Their data is always preserved.")
+                    Text("Tap to toggle on/off. Swipe left to permanently delete.")
                         .font(.system(size: 12))
                         .foregroundStyle(.primary.opacity(0.28))
                         .multilineTextAlignment(.center)
-                        .padding(.horizontal, 32)
-                        .padding(.top, 16)
-                        .padding(.bottom, 8)
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
                 }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
             }
-            .padding(.bottom, 20)
         }
     }
 
@@ -892,30 +898,36 @@ private struct AddLifeContent: View {
     // MARK: Manage tab
 
     private var manageTab: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: 0) {
-                if store.lifeGoals.isEmpty {
+        Group {
+            if store.lifeGoals.isEmpty {
+                ScrollView(showsIndicators: false) {
                     emptyManageNote("No life goals yet. Add some from the other tabs.")
-                } else {
-                    VStack(spacing: 1) {
-                        ForEach($store.lifeGoals) { $goal in
-                            manageRow(goal: $goal)
-                        }
+                }
+            } else {
+                List {
+                    ForEach($store.lifeGoals) { $goal in
+                        manageRow(goal: $goal)
+                            .listRowBackground(Color.appRowFill.opacity(0.7))
+                            .listRowSeparatorTint(Color.appSurface.opacity(0.6))
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                Button(role: .destructive) {
+                                    store.lifeGoals.removeAll { $0.id == goal.id }
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
                     }
-                    .background(Color.appRowFill.opacity(0.7), in: RoundedRectangle(cornerRadius: 16))
-                    .padding(.horizontal, 20)
-                    .padding(.top, 4)
 
-                    Text("Tap to toggle goals on or off the wheel. Their data is always preserved.")
+                    Text("Tap to toggle on/off. Swipe left to permanently delete.")
                         .font(.system(size: 12))
                         .foregroundStyle(.primary.opacity(0.28))
                         .multilineTextAlignment(.center)
-                        .padding(.horizontal, 32)
-                        .padding(.top, 16)
-                        .padding(.bottom, 8)
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
                 }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
             }
-            .padding(.bottom, 20)
         }
     }
 
