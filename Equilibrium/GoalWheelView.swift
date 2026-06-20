@@ -244,9 +244,10 @@ struct GoalWheelView: View {
         let coreDot: Color = colorScheme == .dark ? .white.opacity(0.9) : Color.primary.opacity(0.9)
         ctx.fill(Path(ellipseIn: coreRect), with: .color(coreDot))
 
-        // Top indicator — filled circle pip above the wheel, pointing to the active spoke.
+        // Top indicator pip — centered exactly where a 0%-progress dot sits on the active spoke
+        // (i.e. at `radius` distance straight up from center), so it overlays the spoke end perfectly.
         let pipR:   CGFloat = max(5.0, radius * 0.042)
-        let pipCY = center.y - radius - pipR - 3   // sits just above the outermost dot
+        let pipCY   = center.y - radius               // matches 0%-dot Y exactly
         let pipRect = CGRect(x: center.x - pipR, y: pipCY - pipR, width: pipR * 2, height: pipR * 2)
 
         ctx.drawLayer { layer in
