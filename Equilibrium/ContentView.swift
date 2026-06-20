@@ -38,7 +38,7 @@ struct ContentView: View {
         switch mode {
         case .daily:
             return store.goals
-                .filter { $0.isActive && $0.items.contains { $0.isActive(on: selectedDate) } }
+                .filter { $0.isActive && ($0.items.isEmpty || $0.items.contains { $0.isActive(on: selectedDate) }) }
                 .map { goal in
                     goal.wheelEntry(on: selectedDate,
                                     healthProgress: isToday ? health.progressById[goal.id] : nil)
@@ -241,8 +241,8 @@ struct ContentView: View {
                     let isSelected = cal.isDate(day, inSameDayAs: selectedDate)
                     let isT        = cal.isDateInToday(day)
                     let hasTasks   = store.goals.filter(\.isActive).contains {
-                        $0.items.contains { $0.isActive(on: day) }
-                    }
+                            !$0.items.isEmpty && $0.items.contains { $0.isActive(on: day) }
+                        }
                     Button {
                         withAnimation(.spring(response: 0.3)) { selectedDate = day }
                     } label: {
@@ -489,7 +489,7 @@ struct ContentView: View {
                     .font(.system(size: 14, design: .monospaced))
                     .foregroundStyle(.primary.opacity(0.25))
             } else {
-                let visibleGoals = store.goals.filter { $0.isActive && $0.items.contains { $0.isActive(on: selectedDate) } }
+                let visibleGoals = store.goals.filter { $0.isActive && ($0.items.isEmpty || $0.items.contains { $0.isActive(on: selectedDate) }) }
                 if visibleGoals.isEmpty {
                     Text("no goals scheduled")
                         .font(.system(size: 14, design: .monospaced))
