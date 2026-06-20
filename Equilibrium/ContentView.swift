@@ -154,19 +154,18 @@ struct ContentView: View {
 
     @ViewBuilder
     private var detailDestination: some View {
+        // Use the active WheelEntry's UUID to look up the goal — this is immune to
+        // index mismatches caused by the date filter narrowing `entries` vs the full
+        // active list that detailDestination used to index into.
+        let goalID = active.id
         switch mode {
         case .daily:
-            // activeIndex indexes into the active-filtered list; map back to store array
-            let activeGoals = store.goals.indices.filter { store.goals[$0].isActive }
-            if activeGoals.indices.contains(activeIndex),
-               store.goals.indices.contains(activeGoals[activeIndex]) {
-                GoalDetailView(goal: $store.goals[activeGoals[activeIndex]])
+            if let idx = store.goals.firstIndex(where: { $0.id == goalID }) {
+                GoalDetailView(goal: $store.goals[idx])
             }
         case .life:
-            let activeLife = store.lifeGoals.indices.filter { store.lifeGoals[$0].isActive }
-            if activeLife.indices.contains(activeIndex),
-               store.lifeGoals.indices.contains(activeLife[activeIndex]) {
-                LifeGoalDetailView(goal: $store.lifeGoals[activeLife[activeIndex]])
+            if let idx = store.lifeGoals.firstIndex(where: { $0.id == goalID }) {
+                LifeGoalDetailView(goal: $store.lifeGoals[idx])
             }
         }
     }
