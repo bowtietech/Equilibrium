@@ -22,10 +22,15 @@ private struct AIResponse: Decodable {
     let itemName:    String?
     let complete:    Bool?
 
-    // create_daily_goal
+    // create_daily_goal / add_item scheduling
     let name:        String?
     let icon:        String?
     let items:       [String]?
+    // schedule: "daily" | "once" | "weekdays" | "monthly"
+    let schedule:    String?
+    let date:        String?   // ISO yyyy-MM-dd for "once"
+    let weekdays:    [Int]?    // 1=Sun … 7=Sat for "weekdays"
+    let monthDay:    Int?      // 1-31 for "monthly"
 
     // create_life_goal_metric
     let currentValue: Double?
@@ -50,6 +55,8 @@ private struct AIResponse: Decodable {
         case isLowerBetter = "is_lower_better"
         case newName       = "new_name"
         case subgoalName   = "subgoal_name"
+        case schedule, date, weekdays
+        case monthDay      = "month_day"
     }
 }
 
@@ -160,11 +167,12 @@ final class AIGoalAssistant: ObservableObject {
         case "create_daily_goal":
             guard let name = r.name else { return }
             let allColors = store.goals.map(\.colorData) + store.lifeGoals.map(\.colorData)
+            let sched = schedule(from: r)
             let newGoal = Goal(
                 name:      name,
                 colorData: GoalColor.next(avoiding: allColors),
                 icon:      r.icon ?? "star.fill",
-                items:     (r.items ?? [name]).map { GoalItem(name: $0) },
+                items:     (r.items ?? [name]).map { GoalItem(name: $0, schedule: sched) },
                 isActive:  true
             )
             store.goals.append(newGoal)
@@ -207,7 +215,7 @@ final class AIGoalAssistant: ObservableObject {
         case "add_item":
             guard let gName = r.goalName, let iName = r.itemName ?? r.name else { return }
             if let gi = store.goals.firstIndex(where: { $0.name.matches(gName) }) {
-                store.goals[gi].items.append(GoalItem(name: iName))
+                store.goals[gi].items.append(GoalItem(name: iName, schedule: schedule(from: r)))
             }
 
         case "add_subgoal":
@@ -281,16 +289,42 @@ final class AIGoalAssistant: ObservableObject {
 
     // MARK: - System prompt
 
+    // MARK: - Schedule parsing
+
+    private func schedule(from r: AIResponse) -> GoalSchedule {
+        switch r.schedule {
+        case "once":
+            if let ds = r.date {
+                let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"
+                if let d = f.date(from: ds) { return .once(d) }
+            }
+            return .daily
+        case "weekdays":
+            if let days = r.weekdays, !days.isEmpty { return .weekdays(days) }
+            return .daily
+        case "monthly":
+            if let day = r.monthDay { return .monthly(day) }
+            return .daily
+        default:
+            return .daily
+        }
+    }
+
     private func buildSystemPrompt(store: DataStore) -> String {
         let df = DateFormatter()
         df.dateStyle = .full
         let today = df.string(from: Date())
+        let isoToday: String = {
+            let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"
+            return f.string(from: Date())
+        }()
 
         var p = """
         You are the AI assistant for Equilibrium, a personal goal-tracking app.
-        Today is \(today). Help the user manage their goals through natural voice commands.
+        Today is \(today) (ISO: \(isoToday)). Help the user manage their goals through natural voice commands.
         Respond ONLY with a single valid JSON object — no markdown, no extra text.
         Match goal and item names case-insensitively (fuzzy match is fine).
+        When scheduling for a relative day like "next Monday", compute the actual ISO date from today.
 
         ## Daily Goals (today)
         """
@@ -328,14 +362,26 @@ final class AIGoalAssistant: ObservableObject {
         Mark all items in a daily goal done/undone:
         {"action":"complete_goal","message":"...","goal_name":"...","complete":true}
 
-        Add an item to an existing DAILY goal:
+        Add an item to an existing DAILY goal (optional schedule fields work the same as create_daily_goal):
         {"action":"add_item","message":"...","goal_name":"...","item_name":"..."}
+        {"action":"add_item","message":"...","goal_name":"...","item_name":"...","schedule":"once","date":"2026-06-23"}
 
         Add a subgoal to an existing LIFE goal (project type only):
         {"action":"add_subgoal","message":"...","goal_name":"...","subgoal_name":"..."}
 
-        Create a new daily goal:
+        Create a new daily goal (runs every day by default):
         {"action":"create_daily_goal","message":"...","name":"...","icon":"figure.walk","items":["item 1"]}
+
+        Create a daily goal for a specific date (use ISO yyyy-MM-dd):
+        {"action":"create_daily_goal","message":"...","name":"...","icon":"figure.walk","items":["item 1"],"schedule":"once","date":"2026-06-23"}
+
+        Create a daily goal for specific weekdays (1=Sun,2=Mon,3=Tue,4=Wed,5=Thu,6=Fri,7=Sat):
+        {"action":"create_daily_goal","message":"...","name":"...","icon":"figure.walk","items":["item 1"],"schedule":"weekdays","weekdays":[2,4,6]}
+
+        Create a daily goal for a specific day of the month:
+        {"action":"create_daily_goal","message":"...","name":"...","icon":"figure.walk","items":["item 1"],"schedule":"monthly","month_day":15}
+
+        IMPORTANT: When the user specifies a day/date, use the schedule fields — do NOT include the date in the goal name.
 
         Create a BRAND NEW measurable life goal (only when the goal doesn't already exist):
         {"action":"create_life_goal_metric","message":"...","name":"...","icon":"chart.line.uptrend.xyaxis","current_value":0,"target_value":10,"unit":"kg","is_lower_better":false}
