@@ -159,6 +159,13 @@ struct Goal: Identifiable, Codable, Equatable {
 
     var isHealthBacked: Bool { healthKitIdentifier != nil }
 
+    // Meditation mode
+    var isMeditation: Bool  = false
+    var meditationMinutes: Int = 10
+    /// IDs of the linked life goals that receive updates after each session
+    var meditationTimeGoalID: UUID?
+    var meditationMalaGoalID: UUID?
+
     // Computed — excluded from Codable automatically
     var color: Color { colorData.value }
 
@@ -192,6 +199,8 @@ extension Goal {
     enum CodingKeys: String, CodingKey {
         case id, name, colorData, icon, items, isActive
         case healthKitIdentifier, healthKitTarget, healthKitUnit
+        case isMeditation, meditationMinutes
+        case meditationTimeGoalID, meditationMalaGoalID
     }
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -200,10 +209,14 @@ extension Goal {
         colorData = try c.decode(GoalColor.self,  forKey: .colorData)
         icon      = try c.decode(String.self,     forKey: .icon)
         items     = try c.decode([GoalItem].self, forKey: .items)
-        isActive  = try c.decodeIfPresent(Bool.self, forKey: .isActive) ?? true
+        isActive  = try c.decodeIfPresent(Bool.self,   forKey: .isActive)    ?? true
         healthKitIdentifier = try c.decodeIfPresent(String.self, forKey: .healthKitIdentifier)
         healthKitTarget     = try c.decodeIfPresent(Double.self, forKey: .healthKitTarget)
         healthKitUnit       = try c.decodeIfPresent(String.self, forKey: .healthKitUnit)
+        isMeditation        = try c.decodeIfPresent(Bool.self,   forKey: .isMeditation)   ?? false
+        meditationMinutes   = try c.decodeIfPresent(Int.self,    forKey: .meditationMinutes) ?? 10
+        meditationTimeGoalID = try c.decodeIfPresent(UUID.self,  forKey: .meditationTimeGoalID)
+        meditationMalaGoalID = try c.decodeIfPresent(UUID.self,  forKey: .meditationMalaGoalID)
     }
 }
 

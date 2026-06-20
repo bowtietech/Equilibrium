@@ -16,24 +16,37 @@ private struct UserDataRow: Codable {
     }
 }
 
+// MARK: - Meditation history entry
+
+struct MeditationEntry: Identifiable, Codable {
+    var id           = UUID()
+    var date: Date   = Date()
+    var durationSecs: Int   // total seconds of the session
+    var malaCount:    Int   // number of times the bead button was pressed
+}
+
 // MARK: - DataStore
 
 final class DataStore: ObservableObject {
 
     @Published var goals: [Goal]
     @Published var lifeGoals: [LifeGoal]
+    @Published var meditationHistory: [MeditationEntry]
     @Published var needsOnboarding: Bool
 
     private var userId: UUID?
     private var cancellables = Set<AnyCancellable>()
 
-    private static let goalsKey        = "eq_goals_v1"
-    private static let lifeGoalsKey    = "eq_life_goals_v1"
-    private static let onboardedKey    = "eq_onboarded_v1"
+    private static let goalsKey            = "eq_goals_v1"
+    private static let lifeGoalsKey        = "eq_life_goals_v1"
+    private static let onboardedKey        = "eq_onboarded_v1"
+    private static let meditationKey       = "eq_meditation_v1"
 
     init() {
-        let stored  = Self.loadLocal(key: Self.goalsKey,     fallback: [Goal]())
-        let storedL = Self.loadLocal(key: Self.lifeGoalsKey, fallback: [LifeGoal]())
+        let stored  = Self.loadLocal(key: Self.goalsKey,       fallback: [Goal]())
+        let storedL = Self.loadLocal(key: Self.lifeGoalsKey,   fallback: [LifeGoal]())
+        let storedM = Self.loadLocal(key: Self.meditationKey,  fallback: [MeditationEntry]())
+        meditationHistory = storedM
         goals     = stored
         lifeGoals = storedL
 
@@ -199,9 +212,47 @@ final class DataStore: ObservableObject {
     // MARK: - Utilities
 
     func saveNow() {
-        Self.saveLocal(goals,     key: Self.goalsKey)
-        Self.saveLocal(lifeGoals, key: Self.lifeGoalsKey)
+        Self.saveLocal(goals,            key: Self.goalsKey)
+        Self.saveLocal(lifeGoals,        key: Self.lifeGoalsKey)
+        Self.saveLocal(meditationHistory, key: Self.meditationKey)
         pushToCloud()
+    }
+
+    /// Saves a completed meditation session and updates linked life goals.
+    func saveMeditationSession(_ entry: MeditationEntry, for goal: Goal) {
+        meditationHistory.append(entry)
+        Self.saveLocal(meditationHistory, key: Self.meditationKey)
+
+        let minutes = Double(entry.durationSecs) / 60.0
+
+        // Update cumulative meditation-time life goal if linked
+        if let tid = goal.meditationTimeGoalID,
+           let idx = lifeGoals.firstIndex(where: { $0.id == tid }),
+           case .metric(var data) = lifeGoals[idx].kind {
+            data.currentValue += minutes
+            let today = Calendar.current.startOfDay(for: Date())
+            let lastDay = data.history.last.map { Calendar.current.startOfDay(for: $0.date) }
+            if lastDay != today {
+                data.history.append(MetricEntry(date: Date(), value: data.currentValue))
+            }
+            lifeGoals[idx].kind = .metric(data)
+        }
+
+        // Update mala-count life goal if linked (tracks average per session, lower = better)
+        if let mid = goal.meditationMalaGoalID,
+           let idx = lifeGoals.firstIndex(where: { $0.id == mid }),
+           case .metric(var data) = lifeGoals[idx].kind {
+            let allCounts = meditationHistory.map { Double($0.malaCount) }
+            data.currentValue = allCounts.isEmpty ? 0 : allCounts.reduce(0,+) / Double(allCounts.count)
+            let today = Calendar.current.startOfDay(for: Date())
+            let lastDay = data.history.last.map { Calendar.current.startOfDay(for: $0.date) }
+            if lastDay != today {
+                data.history.append(MetricEntry(date: Date(), value: data.currentValue))
+            }
+            lifeGoals[idx].kind = .metric(data)
+        }
+
+        saveNow()
     }
 
     func resetToDefaults() {

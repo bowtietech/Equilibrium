@@ -16,22 +16,24 @@ private let weekdayLabels = ["S", "M", "T", "W", "T", "F", "S"]  // index 0 = Su
 
 struct GoalDetailView: View {
     @Binding var goal: Goal
-    @EnvironmentObject private var health: HealthKitManager
+    @EnvironmentObject private var health:  HealthKitManager
+    @EnvironmentObject private var store:   DataStore
     @Environment(\.dismiss) private var dismiss
 
-    @State private var showingAddSheet   = false
+    @State private var showingAddSheet    = false
+    @State private var showMeditation     = false   // full-screen meditation session
     @State private var editingItemID: UUID? = nil
-    @State private var editBuffer        = ""
-    @State private var editingTitle      = false
-    @State private var titleBuffer       = ""
+    @State private var editBuffer         = ""
+    @State private var editingTitle       = false
+    @State private var titleBuffer        = ""
     @FocusState private var titleFocused: Bool
 
     // Add-sheet state
-    @State private var newItemName       = ""
-    @State private var scheduleType      = ScheduleType.daily
-    @State private var weekdaySelection  = Set<Int>([2, 3, 4, 5, 6])  // Mon–Fri default
-    @State private var monthDay          = Calendar.current.component(.day, from: Date())
-    @State private var onceDate          = Date()
+    @State private var newItemName        = ""
+    @State private var scheduleType       = ScheduleType.daily
+    @State private var weekdaySelection   = Set<Int>([2, 3, 4, 5, 6])  // Mon–Fri default
+    @State private var monthDay           = Calendar.current.component(.day, from: Date())
+    @State private var onceDate           = Date()
 
     private var derivedSchedule: GoalSchedule {
         switch scheduleType {
@@ -58,6 +60,9 @@ struct GoalDetailView: View {
 
             List {
                 headerSection
+                if goal.isMeditation {
+                    meditationSection
+                }
                 if goal.isHealthBacked {
                     healthSection
                 } else {
@@ -83,6 +88,17 @@ struct GoalDetailView: View {
         }
         .sheet(isPresented: $showingAddSheet) {
             addItemSheet
+        }
+        .fullScreenCover(isPresented: $showMeditation) {
+            MeditationSessionView(timeGoalMinutes: goal.meditationMinutes) { secs, malas in
+                showMeditation = false
+                let entry = MeditationEntry(durationSecs: secs, malaCount: malas)
+                store.saveMeditationSession(entry, for: goal)
+                // Mark today's meditation item complete if present
+                if let i = goal.items.firstIndex(where: { $0.isActiveToday && !$0.isComplete }) {
+                    goal.items[i].isComplete = true
+                }
+            }
         }
     }
 
@@ -159,12 +175,183 @@ struct GoalDetailView: View {
                         .font(.system(size: 10, design: .monospaced))
                         .foregroundStyle(.primary.opacity(0.15))
                 }
+
+                if !goal.isHealthBacked {
+                    Toggle(isOn: $goal.isMeditation) {
+                        Label("Meditation Mode", systemImage: "figure.mind.and.body")
+                            .font(.system(size: 13))
+                            .foregroundStyle(.primary.opacity(0.55))
+                    }
+                    .tint(goal.color)
+                    .padding(.horizontal, 32)
+                    .padding(.top, 4)
+                }
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 28)
             .listRowBackground(Color.clear)
             .listRowSeparator(.hidden)
         }
+    }
+
+    // MARK: - Meditation Section
+
+    private var meditationSection: some View {
+        Section {
+            // Time goal stepper
+            HStack {
+                Image(systemName: "timer")
+                    .foregroundStyle(goal.color)
+                    .frame(width: 28)
+                Text("Session Goal")
+                    .font(.system(size: 15))
+                Spacer()
+                Stepper("\(goal.meditationMinutes) min",
+                        value: $goal.meditationMinutes, in: 1...120, step: 5)
+                    .fixedSize()
+                    .font(.system(size: 14, design: .monospaced))
+            }
+            .listRowBackground(Color.appRowFill)
+
+            // Start button
+            Button {
+                showMeditation = true
+            } label: {
+                HStack {
+                    Spacer()
+                    Image(systemName: "play.fill")
+                        .font(.system(size: 14, weight: .semibold))
+                    Text("Begin Meditation")
+                        .font(.system(size: 16, weight: .semibold))
+                    Spacer()
+                }
+                .foregroundStyle(.white)
+                .padding(.vertical, 13)
+                .background(goal.color.gradient, in: RoundedRectangle(cornerRadius: 12))
+            }
+            .buttonStyle(.plain)
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+
+            // Sister life goals
+            sisterLifeGoalRow
+
+            // Recent sessions
+            if !store.meditationHistory.isEmpty {
+                let recent = store.meditationHistory
+                    .sorted { $0.date > $1.date }
+                    .prefix(5)
+                ForEach(recent) { entry in
+                    HStack {
+                        Image(systemName: "clock")
+                            .foregroundStyle(goal.color.opacity(0.6))
+                            .frame(width: 28)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(entry.date, style: .date)
+                                .font(.system(size: 13))
+                                .foregroundStyle(.primary.opacity(0.75))
+                            Text("\(entry.durationSecs / 60) min · \(entry.malaCount) bead\(entry.malaCount == 1 ? "" : "s")")
+                                .font(.system(size: 11, design: .monospaced))
+                                .foregroundStyle(.primary.opacity(0.38))
+                        }
+                        Spacer()
+                    }
+                    .listRowBackground(Color.appRowFill)
+                }
+            }
+        } header: {
+            HStack {
+                Text("ॐ  Meditation")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(goal.color)
+                    .textCase(nil)
+                Spacer()
+                // Toggle: enable/disable meditation mode
+                Toggle("", isOn: $goal.isMeditation)
+                    .labelsHidden()
+                    .tint(goal.color)
+            }
+            .padding(.trailing, 20)
+        }
+    }
+
+    @ViewBuilder
+    private var sisterLifeGoalRow: some View {
+        if goal.meditationTimeGoalID == nil || goal.meditationMalaGoalID == nil {
+            Button {
+                createSisterLifeGoals()
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "link")
+                        .foregroundStyle(goal.color.opacity(0.7))
+                        .frame(width: 28)
+                    Text("Create Sister Life Goals")
+                        .font(.system(size: 14))
+                        .foregroundStyle(goal.color)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.primary.opacity(0.25))
+                }
+            }
+            .buttonStyle(.plain)
+            .listRowBackground(Color.appRowFill)
+        } else {
+            HStack(spacing: 8) {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(goal.color)
+                    .frame(width: 28)
+                Text("Life goals linked")
+                    .font(.system(size: 14))
+                    .foregroundStyle(.primary.opacity(0.55))
+                Spacer()
+            }
+            .listRowBackground(Color.appRowFill)
+        }
+    }
+
+    private func createSisterLifeGoals() {
+        let existing = store.goals.map(\.colorData) + store.lifeGoals.map(\.colorData)
+
+        // Meditation Time — cumulative minutes, higher is better
+        let timeGoal = LifeGoal(
+            name:      "Meditation Time",
+            colorData: GoalColor.next(avoiding: existing),
+            icon:      "timer",
+            kind:      .metric(MetricData(
+                unit:         "min",
+                direction:    .higher,
+                startValue:   0,
+                currentValue: 0,
+                targetValue:  600,   // 600 minutes = 10 hours default
+                history:      []
+            )),
+            isActive: true
+        )
+        store.lifeGoals.append(timeGoal)
+        goal.meditationTimeGoalID = timeGoal.id
+
+        let existing2 = store.goals.map(\.colorData) + store.lifeGoals.map(\.colorData)
+
+        // Mala Focus — average beads per session, lower is better (fewer interruptions)
+        let malaGoal = LifeGoal(
+            name:      "Mala Focus",
+            colorData: GoalColor.next(avoiding: existing2),
+            icon:      "circle.grid.3x3.fill",
+            kind:      .metric(MetricData(
+                unit:         "avg beads",
+                direction:    .lower,
+                startValue:   108,
+                currentValue: 108,
+                targetValue:  0,
+                history:      []
+            )),
+            isActive: true
+        )
+        store.lifeGoals.append(malaGoal)
+        goal.meditationMalaGoalID = malaGoal.id
+
+        store.saveNow()
     }
 
     private func commitTitle() {
