@@ -235,65 +235,54 @@ struct ContentView: View {
         let days = (0..<7).compactMap { cal.date(byAdding: .day, value: $0, to: weekStart) }
 
         return VStack(spacing: 4) {
-            HStack(spacing: 0) {
-                // Back chevron
-                Button {
-                    withAnimation(.spring(response: 0.3)) { weekOffset -= 1 }
-                } label: {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(.primary.opacity(0.4))
-                        .frame(width: 28, height: 28)
-                }
-                .buttonStyle(.plain)
-
-                // Day chips
-                HStack(spacing: 4) {
-                    ForEach(days, id: \.self) { day in
-                        let isSelected = cal.isDate(day, inSameDayAs: selectedDate)
-                        let isT        = cal.isDateInToday(day)
-                        let hasTasks   = store.goals.filter(\.isActive).contains {
-                            $0.items.contains { $0.isActive(on: day) }
-                        }
-                        Button {
-                            withAnimation(.spring(response: 0.3)) { selectedDate = day }
-                        } label: {
-                            VStack(spacing: 2) {
-                                Text(dayAbbrev(day))
-                                    .font(.system(size: 9, weight: .semibold))
-                                    .foregroundStyle(Color.primary.opacity(isSelected ? 1.0 : 0.4))
-                                Text(dayNumber(day))
-                                    .font(.system(size: 14, weight: isSelected || isT ? .bold : .regular))
-                                    .foregroundStyle(isSelected ? Color.primary
-                                                     : isT ? Color.accentColor
-                                                     : Color.primary.opacity(0.55))
-                                Circle()
-                                    .fill(hasTasks
-                                          ? (isSelected ? Color.primary : Color.accentColor.opacity(0.6))
-                                          : Color.clear)
-                                    .frame(width: 4, height: 4)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 6)
-                            .background(isSelected ? Color.appRowFill : Color.clear,
-                                        in: RoundedRectangle(cornerRadius: 10))
-                        }
-                        .buttonStyle(.plain)
+            // Day chips row — swipeable
+            HStack(spacing: 4) {
+                ForEach(days, id: \.self) { day in
+                    let isSelected = cal.isDate(day, inSameDayAs: selectedDate)
+                    let isT        = cal.isDateInToday(day)
+                    let hasTasks   = store.goals.filter(\.isActive).contains {
+                        $0.items.contains { $0.isActive(on: day) }
                     }
+                    Button {
+                        withAnimation(.spring(response: 0.3)) { selectedDate = day }
+                    } label: {
+                        VStack(spacing: 2) {
+                            Text(dayAbbrev(day))
+                                .font(.system(size: 9, weight: .semibold))
+                                .foregroundStyle(Color.primary.opacity(isSelected ? 1.0 : 0.4))
+                            Text(dayNumber(day))
+                                .font(.system(size: 14, weight: isSelected || isT ? .bold : .regular))
+                                .foregroundStyle(isSelected ? Color.primary
+                                                 : isT ? Color.accentColor
+                                                 : Color.primary.opacity(0.55))
+                            Circle()
+                                .fill(hasTasks
+                                      ? (isSelected ? Color.primary : Color.accentColor.opacity(0.6))
+                                      : Color.clear)
+                                .frame(width: 4, height: 4)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 6)
+                        .background(isSelected ? Color.appRowFill : Color.clear,
+                                    in: RoundedRectangle(cornerRadius: 10))
+                    }
+                    .buttonStyle(.plain)
                 }
-                .frame(maxWidth: .infinity)
-
-                // Forward chevron
-                Button {
-                    withAnimation(.spring(response: 0.3)) { weekOffset += 1 }
-                } label: {
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(.primary.opacity(0.4))
-                        .frame(width: 28, height: 28)
-                }
-                .buttonStyle(.plain)
             }
+            .frame(maxWidth: .infinity)
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 20)
+                    .onEnded { value in
+                        let dx = value.translation.width
+                        guard abs(dx) > abs(value.translation.height) else { return }
+                        let feedback = UIImpactFeedbackGenerator(style: .light)
+                        feedback.impactOccurred()
+                        withAnimation(.spring(response: 0.3)) {
+                            if dx < 0 { weekOffset += 1 } else { weekOffset -= 1 }
+                        }
+                    }
+            )
 
             // "Today" pill — shown when not on current week
             if weekOffset != 0 {
