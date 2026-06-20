@@ -3,26 +3,37 @@ import SwiftUI
 // MARK: - MeditationSessionView
 //
 // Full-screen immersive meditation session.
+// • Frequency selector at bottom — pick any Solfeggio tone before or during session
 // • Large ॐ button counts mala-bead presses (mind-refocus events)
 // • Timer counts up; haptic + visual cue fires when the time goal is reached
-// • Ambient OM-frequency drone plays in the background (mutable)
+// • Ambient binaural drone plays in the background (mutable)
 
 struct MeditationSessionView: View {
 
     let timeGoalMinutes: Int
-    /// Called when the user ends the session — receives (durationSeconds, malaCount)
+    let initialFrequency: SolfeggioFrequency
+    /// Called when the user ends the session — receives (durationSeconds, malaCount).
     let onComplete: (Int, Int) -> Void
 
     @StateObject private var audio = MeditationAudioEngine()
-    @State private var malaCount        = 0
-    @State private var startTime        = Date()
+    @State private var malaCount       = 0
+    @State private var startTime       = Date()
     @State private var elapsed: TimeInterval = 0
-    @State private var goalReached      = false
-    @State private var goalHapticFired  = false
-    @State private var showEndConfirm   = false
-    @State private var beadPulse        = false   // drives button press animation
+    @State private var goalReached     = false
+    @State private var goalHapticFired = false
+    @State private var showEndConfirm  = false
+    @State private var showFreqPicker  = false
+    @State private var beadPulse       = false
 
     private let ticker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+
+    init(timeGoalMinutes: Int,
+         frequency: SolfeggioFrequency = .default,
+         onComplete: @escaping (Int, Int) -> Void) {
+        self.timeGoalMinutes  = timeGoalMinutes
+        self.initialFrequency = frequency
+        self.onComplete       = onComplete
+    }
 
     // MARK: Body
 
@@ -58,15 +69,22 @@ struct MeditationSessionView: View {
                 UINotificationFeedbackGenerator().notificationOccurred(.success)
             }
         }
-        .onAppear  { audio.start() }
+        .onAppear  { audio.start(frequency: initialFrequency) }
         .onDisappear { audio.stop() }
         .alert("End session?", isPresented: $showEndConfirm) {
-            Button("End & Save", role: .destructive) {
-                onComplete(Int(elapsed), malaCount)
-            }
+            Button("End & Save", role: .destructive) { onComplete(Int(elapsed), malaCount) }
             Button("Keep going", role: .cancel) { }
         } message: {
             Text("Your session will be saved to history.")
+        }
+        .sheet(isPresented: $showFreqPicker) {
+            FrequencyPickerSheet(selected: audio.selectedFrequency) { freq in
+                withAnimation(.easeInOut(duration: 0.3)) { audio.setFrequency(freq) }
+                showFreqPicker = false
+            }
+            .presentationDetents([.fraction(0.72)])
+            .presentationDragIndicator(.visible)
+            .preferredColorScheme(.dark)
         }
     }
 
@@ -74,8 +92,7 @@ struct MeditationSessionView: View {
 
     private var background: some View {
         ZStack {
-            Color(red: 0.04, green: 0.04, blue: 0.16)
-                .ignoresSafeArea()
+            Color(red: 0.04, green: 0.04, blue: 0.16).ignoresSafeArea()
             RadialGradient(
                 colors: [Color(red: 0.55, green: 0.30, blue: 0.75).opacity(0.22), .clear],
                 center: .center, startRadius: 60, endRadius: 420
@@ -93,8 +110,7 @@ struct MeditationSessionView: View {
 
             if goalReached {
                 HStack(spacing: 6) {
-                    Image(systemName: "bell.fill")
-                        .font(.system(size: 12))
+                    Image(systemName: "bell.fill").font(.system(size: 12))
                     Text("Goal reached · \(timeGoalMinutes) min")
                         .font(.system(size: 13, weight: .medium))
                 }
@@ -119,37 +135,30 @@ struct MeditationSessionView: View {
             }
         } label: {
             ZStack {
-                // Outer ambient glow
                 Circle()
                     .fill(Color(red: 0.85, green: 0.62, blue: 0.12).opacity(beadPulse ? 0.28 : 0.12))
                     .frame(width: 230, height: 230)
                     .blur(radius: 28)
 
-                // Button body
                 Circle()
                     .fill(
                         RadialGradient(
                             colors: [
                                 Color(red: 0.92, green: 0.72, blue: 0.22).opacity(beadPulse ? 0.35 : 0.18),
-                                Color(red: 0.12, green: 0.06, blue: 0.28)
+                                Color(red: 0.12, green: 0.06, blue: 0.28),
                             ],
-                            center: .center,
-                            startRadius: 10,
-                            endRadius: 100
+                            center: .center, startRadius: 10, endRadius: 100
                         )
                     )
                     .overlay(
                         Circle()
-                            .stroke(
-                                Color(red: 0.90, green: 0.76, blue: 0.32).opacity(beadPulse ? 0.80 : 0.42),
-                                lineWidth: 1.5
-                            )
+                            .stroke(Color(red: 0.90, green: 0.76, blue: 0.32)
+                                        .opacity(beadPulse ? 0.80 : 0.42), lineWidth: 1.5)
                     )
                     .frame(width: 196, height: 196)
                     .scaleEffect(beadPulse ? 1.06 : 1.0)
                     .animation(.spring(response: 0.2, dampingFraction: 0.55), value: beadPulse)
 
-                // OM symbol + count
                 VStack(spacing: 6) {
                     Text("ॐ")
                         .font(.system(size: 82))
@@ -180,37 +189,54 @@ struct MeditationSessionView: View {
     }
 
     private var bottomBar: some View {
-        HStack {
+        HStack(spacing: 0) {
             // Mute / unmute
             Button {
                 audio.toggleMute()
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
             } label: {
                 Image(systemName: audio.isMuted ? "speaker.slash.fill" : "speaker.wave.2.fill")
-                    .font(.system(size: 20))
+                    .font(.system(size: 18))
                     .foregroundStyle(.white.opacity(audio.isMuted ? 0.30 : 0.60))
-                    .frame(width: 48, height: 48)
+                    .frame(width: 44, height: 44)
                     .background(.white.opacity(0.06), in: Circle())
             }
             .buttonStyle(.plain)
-            .padding(.leading, 36)
+            .padding(.leading, 28)
+
+            Spacer()
+
+            // Frequency indicator pill — tap to change
+            Button { showFreqPicker = true } label: {
+                HStack(spacing: 5) {
+                    Image(systemName: audio.selectedFrequency.icon)
+                        .font(.system(size: 11))
+                    Text(audio.selectedFrequency.tagline)
+                        .font(.system(size: 12, weight: .medium))
+                }
+                .foregroundStyle(.white.opacity(0.60))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 7)
+                .background(.white.opacity(0.08), in: Capsule())
+                .overlay(Capsule().stroke(.white.opacity(0.14), lineWidth: 1))
+            }
+            .buttonStyle(.plain)
+            .animation(.easeInOut(duration: 0.25), value: audio.selectedFrequency.id)
 
             Spacer()
 
             // End session
-            Button {
-                showEndConfirm = true
-            } label: {
-                Text("End Session")
+            Button { showEndConfirm = true } label: {
+                Text("End")
                     .font(.system(size: 15, weight: .medium))
                     .foregroundStyle(.white.opacity(0.72))
-                    .padding(.horizontal, 22)
+                    .padding(.horizontal, 20)
                     .padding(.vertical, 11)
                     .background(.white.opacity(0.10), in: Capsule())
                     .overlay(Capsule().stroke(.white.opacity(0.14), lineWidth: 1))
             }
             .buttonStyle(.plain)
-            .padding(.trailing, 36)
+            .padding(.trailing, 28)
         }
     }
 
@@ -224,5 +250,97 @@ struct MeditationSessionView: View {
         return h > 0
             ? String(format: "%d:%02d:%02d", h, m, s)
             : String(format: "%02d:%02d", m, s)
+    }
+}
+
+// MARK: - In-session frequency picker sheet
+
+private struct FrequencyPickerSheet: View {
+    let selected: SolfeggioFrequency
+    let onSelect: (SolfeggioFrequency) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("Frequency")
+                .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                .foregroundStyle(.white.opacity(0.40))
+                .padding(.horizontal, 24)
+                .padding(.top, 24)
+                .padding(.bottom, 16)
+
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: 10) {
+                    ForEach(SolfeggioFrequency.all) { freq in
+                        SessionFreqRow(freq: freq,
+                                       isSelected: freq.id == selected.id,
+                                       onTap: { onSelect(freq) })
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 32)
+            }
+        }
+        .background(Color(red: 0.06, green: 0.06, blue: 0.18))
+    }
+}
+
+private struct SessionFreqRow: View {
+    let freq: SolfeggioFrequency
+    let isSelected: Bool
+    let onTap: () -> Void
+
+    // Fixed accent colour for the session sheet (goal colour not available here)
+    private let accent = Color(red: 0.70, green: 0.50, blue: 0.90)
+
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: 14) {
+                // Icon
+                Image(systemName: freq.icon)
+                    .font(.system(size: 18, weight: .light))
+                    .foregroundStyle(isSelected ? accent : .white.opacity(0.45))
+                    .frame(width: 36, height: 36)
+                    .background(
+                        (isSelected ? accent.opacity(0.15) : Color.white.opacity(0.05)),
+                        in: Circle()
+                    )
+
+                // Text
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 6) {
+                        Text(freq.name)
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(isSelected ? accent : .white.opacity(0.85))
+                        Text("·")
+                            .foregroundStyle(.white.opacity(0.25))
+                        Text("\(Int(freq.hz)) Hz")
+                            .font(.system(size: 13, design: .monospaced))
+                            .foregroundStyle(.white.opacity(0.40))
+                    }
+                    Text(freq.tagline.components(separatedBy: " · ").last ?? freq.tagline)
+                        .font(.system(size: 12, weight: .light))
+                        .foregroundStyle(.white.opacity(0.35))
+                }
+
+                Spacer()
+
+                if isSelected {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(accent)
+                }
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(isSelected ? accent.opacity(0.08) : Color.white.opacity(0.04))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(isSelected ? accent.opacity(0.35) : Color.clear, lineWidth: 1)
+                    )
+            )
+        }
+        .buttonStyle(.plain)
     }
 }

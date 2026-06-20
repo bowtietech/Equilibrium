@@ -22,6 +22,7 @@ struct GoalDetailView: View {
 
     @State private var showingAddSheet    = false
     @State private var showMeditation     = false   // full-screen meditation session
+    @State private var meditationFreq     = SolfeggioFrequency.default
     @State private var editingItemID: UUID? = nil
     @State private var editBuffer         = ""
     @State private var editingTitle       = false
@@ -91,7 +92,8 @@ struct GoalDetailView: View {
             addItemSheet
         }
         .fullScreenCover(isPresented: $showMeditation) {
-            MeditationSessionView(timeGoalMinutes: goal.meditationMinutes) { secs, malas in
+            MeditationSessionView(timeGoalMinutes: goal.meditationMinutes,
+                                  frequency: meditationFreq) { secs, malas in
                 showMeditation = false
                 let entry = MeditationEntry(durationSecs: secs, malaCount: malas)
                 store.saveMeditationSession(entry, for: goal)
@@ -220,6 +222,36 @@ struct GoalDetailView: View {
                     .font(.system(size: 14, design: .monospaced))
             }
             .listRowBackground(Color.appRowFill)
+
+            // Frequency picker — horizontal cards
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Frequency")
+                    .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                    .foregroundStyle(.primary.opacity(0.30))
+                    .padding(.horizontal, 4)
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 10) {
+                        ForEach(SolfeggioFrequency.all) { freq in
+                            FrequencyCard(freq: freq,
+                                          isSelected: meditationFreq.id == freq.id,
+                                          accentColor: goal.color)
+                            .onTapGesture {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+                                    meditationFreq = freq
+                                }
+                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 2)
+                    .padding(.vertical, 2)
+                }
+            }
+            .padding(.vertical, 10)
+            .listRowBackground(Color.clear)
+            .listRowSeparator(.hidden)
+            .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
 
             // Start button
             Button {
@@ -700,6 +732,56 @@ struct GoalItemRow: View {
         let trimmed = editBuffer.trimmingCharacters(in: .whitespaces)
         if !trimmed.isEmpty { item.name = trimmed }
         editingID = nil
+    }
+}
+
+// MARK: - Frequency card (used inside GoalDetailView's meditation section)
+
+struct FrequencyCard: View {
+    let freq: SolfeggioFrequency
+    let isSelected: Bool
+    let accentColor: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: freq.icon)
+                    .font(.system(size: 16, weight: .light))
+                    .foregroundStyle(isSelected ? accentColor : .primary.opacity(0.45))
+                Spacer()
+                Text("\(Int(freq.hz)) Hz")
+                    .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                    .foregroundStyle(isSelected ? accentColor : .primary.opacity(0.35))
+            }
+
+            Text(freq.name)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(isSelected ? accentColor : .primary.opacity(0.80))
+                .lineLimit(1)
+
+            Text(freq.tagline.components(separatedBy: " · ").last ?? "")
+                .font(.system(size: 11, weight: .regular))
+                .foregroundStyle(.primary.opacity(0.38))
+                .lineLimit(1)
+
+            Text(freq.description)
+                .font(.system(size: 11, weight: .light))
+                .foregroundStyle(.primary.opacity(0.50))
+                .lineLimit(3)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(14)
+        .frame(width: 168)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(isSelected ? accentColor.opacity(0.10) : Color.appRowFill)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(isSelected ? accentColor.opacity(0.55) : Color.primary.opacity(0.08),
+                                lineWidth: 1.5)
+                )
+        )
+        .contentShape(Rectangle())
     }
 }
 
