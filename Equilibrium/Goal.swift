@@ -90,14 +90,15 @@ enum GoalSchedule: Equatable, Codable {
 
     // MARK: Helpers
 
-    var isActiveToday: Bool {
+    var isActiveToday: Bool { isActive(on: Date()) }
+
+    func isActive(on date: Date) -> Bool {
         let cal = Calendar.current
-        let now = Date()
         switch self {
         case .daily:              return true
-        case .weekdays(let days): return days.contains(cal.component(.weekday, from: now))
-        case .monthly(let day):   return cal.component(.day, from: now) == day
-        case .once(let date):     return cal.isDate(date, inSameDayAs: now)
+        case .weekdays(let days): return days.contains(cal.component(.weekday, from: date))
+        case .monthly(let day):   return cal.component(.day, from: date) == day
+        case .once(let d):        return cal.isDate(d, inSameDayAs: date)
         }
     }
 
@@ -136,6 +137,7 @@ struct GoalItem: Identifiable, Codable, Equatable {
     var schedule: GoalSchedule = .daily
 
     var isActiveToday: Bool { schedule.isActiveToday }
+    func isActive(on date: Date) -> Bool { schedule.isActive(on: date) }
 }
 
 // MARK: - Goal
@@ -165,19 +167,22 @@ struct Goal: Identifiable, Codable, Equatable {
         return Double(items.filter(\.isComplete).count) / Double(items.count)
     }
 
-    var todayProgress: Double? {
-        let today = items.filter(\.isActiveToday)
-        guard !today.isEmpty else { return nil }
-        return Double(today.filter(\.isComplete).count) / Double(today.count)
+    var todayProgress: Double? { progress(on: Date()) }
+
+    func progress(on date: Date) -> Double? {
+        let scheduled = items.filter { $0.isActive(on: date) }
+        guard !scheduled.isEmpty else { return nil }
+        // For today we use live completion state; other days show the same
+        // state since per-day history isn't stored yet.
+        return Double(scheduled.filter(\.isComplete).count) / Double(scheduled.count)
     }
 
-    /// Returns a WheelEntry, optionally overriding progress with a live HealthKit value.
-    func wheelEntry(healthProgress: Double? = nil) -> WheelEntry {
-        let p = healthProgress ?? todayProgress ?? progress
+    /// Returns a WheelEntry for a given date, optionally overriding with a HealthKit value.
+    func wheelEntry(on date: Date = Date(), healthProgress: Double? = nil) -> WheelEntry {
+        let p = healthProgress ?? progress(on: date) ?? progress
         return WheelEntry(id: id, name: name, color: color, icon: icon, progress: p)
     }
 
-    // Legacy convenience kept for non-HK callers
     var wheelEntry: WheelEntry { wheelEntry() }
 }
 

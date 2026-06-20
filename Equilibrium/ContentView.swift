@@ -24,16 +24,25 @@ struct ContentView: View {
     @State private var showProfile      = false
     @State private var showHealthImport = false
     @State private var showAddGoal      = false
+    @State private var selectedDate     = Calendar.current.startOfDay(for: Date())
+    @State private var weekOffset       = 0   // weeks relative to current week
 
     @AppStorage("profile_name")        private var profileName: String = ""
     @AppStorage("profile_avatar_col")  private var profileColorIdx: Int = 0
 
+    private var isToday: Bool {
+        Calendar.current.isDateInToday(selectedDate)
+    }
+
     private var entries: [WheelEntry] {
         switch mode {
         case .daily:
-            return store.goals.filter(\.isActive).map { goal in
-                goal.wheelEntry(healthProgress: health.progressById[goal.id])
-            }
+            return store.goals
+                .filter { $0.isActive && $0.items.contains { $0.isActive(on: selectedDate) } }
+                .map { goal in
+                    goal.wheelEntry(on: selectedDate,
+                                    healthProgress: isToday ? health.progressById[goal.id] : nil)
+                }
         case .life:
             return store.lifeGoals.filter(\.isActive).map(\.wheelEntry)
         }
@@ -53,6 +62,7 @@ struct ContentView: View {
                 VStack(spacing: 0) {
                     appLabel
                     modeSwitcher
+                    if mode == .daily { dayStrip }
                     Spacer()
                     goalInfo
                     wheelArea
@@ -212,6 +222,114 @@ struct ContentView: View {
         }
         .padding(.horizontal, 20)
         .padding(.top, 16)
+    }
+
+    // MARK: - Day strip
+
+    private var dayStrip: some View {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: Date())
+        // Build 7 days for the displayed week
+        let weekStart = cal.date(byAdding: .weekOfYear, value: weekOffset,
+                                 to: cal.date(from: cal.dateComponents([.yearForWeekOfYear, .weekOfYear], from: today))!)!
+        let days = (0..<7).compactMap { cal.date(byAdding: .day, value: $0, to: weekStart) }
+
+        return VStack(spacing: 4) {
+            HStack(spacing: 0) {
+                // Back chevron
+                Button {
+                    withAnimation(.spring(response: 0.3)) { weekOffset -= 1 }
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.primary.opacity(0.4))
+                        .frame(width: 28, height: 28)
+                }
+                .buttonStyle(.plain)
+
+                // Day chips
+                HStack(spacing: 4) {
+                    ForEach(days, id: \.self) { day in
+                        let isSelected = cal.isDate(day, inSameDayAs: selectedDate)
+                        let isT        = cal.isDateInToday(day)
+                        let hasTasks   = store.goals.filter(\.isActive).contains {
+                            $0.items.contains { $0.isActive(on: day) }
+                        }
+                        Button {
+                            withAnimation(.spring(response: 0.3)) { selectedDate = day }
+                        } label: {
+                            VStack(spacing: 2) {
+                                Text(dayAbbrev(day))
+                                    .font(.system(size: 9, weight: .semibold))
+                                    .foregroundStyle(Color.primary.opacity(isSelected ? 1.0 : 0.4))
+                                Text(dayNumber(day))
+                                    .font(.system(size: 14, weight: isSelected || isT ? .bold : .regular))
+                                    .foregroundStyle(isSelected ? Color.primary
+                                                     : isT ? Color.accentColor
+                                                     : Color.primary.opacity(0.55))
+                                Circle()
+                                    .fill(hasTasks
+                                          ? (isSelected ? Color.primary : Color.accentColor.opacity(0.6))
+                                          : Color.clear)
+                                    .frame(width: 4, height: 4)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 6)
+                            .background(isSelected ? Color.appRowFill : Color.clear,
+                                        in: RoundedRectangle(cornerRadius: 10))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+
+                // Forward chevron
+                Button {
+                    withAnimation(.spring(response: 0.3)) { weekOffset += 1 }
+                } label: {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.primary.opacity(0.4))
+                        .frame(width: 28, height: 28)
+                }
+                .buttonStyle(.plain)
+            }
+
+            // "Today" pill — shown when not on current week
+            if weekOffset != 0 {
+                Button {
+                    withAnimation(.spring(response: 0.3)) {
+                        weekOffset   = 0
+                        selectedDate = today
+                    }
+                } label: {
+                    Text("Back to Today")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(Color.accentColor)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 4)
+                        .background(Color.accentColor.opacity(0.12), in: Capsule())
+                }
+                .buttonStyle(.plain)
+                .transition(.scale.combined(with: .opacity))
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
+        .animation(.spring(response: 0.3), value: weekOffset)
+    }
+
+    private func dayAbbrev(_ date: Date) -> String {
+        let f = DateFormatter(); f.dateFormat = "EEE"
+        return f.string(from: date).uppercased()
+    }
+    private func dayNumber(_ date: Date) -> String {
+        let f = DateFormatter(); f.dateFormat = "d"
+        return f.string(from: date)
+    }
+    private func dayStrip_label(_ date: Date) -> String {
+        let f = DateFormatter(); f.dateFormat = "EEE d"
+        return f.string(from: date)
     }
 
     private var modeSwitcher: some View {
@@ -382,19 +500,27 @@ struct ContentView: View {
                     .font(.system(size: 14, design: .monospaced))
                     .foregroundStyle(.primary.opacity(0.25))
             } else {
-                let g = activeDaily[min(activeIndex, activeDaily.count - 1)]
-                if g.isHealthBacked, let p = health.progressById[g.id] {
-                    Text("\(Int(p * 100))%")
-                        .font(.system(size: 14, design: .monospaced))
-                        .foregroundStyle(.primary.opacity(0.45))
-                } else if let tp = g.todayProgress {
-                    Text("\(Int(tp * 100))% today")
-                        .font(.system(size: 14, design: .monospaced))
-                        .foregroundStyle(.primary.opacity(0.45))
-                } else {
-                    Text("no goals today")
+                let visibleGoals = store.goals.filter { $0.isActive && $0.items.contains { $0.isActive(on: selectedDate) } }
+                if visibleGoals.isEmpty {
+                    Text("no goals scheduled")
                         .font(.system(size: 14, design: .monospaced))
                         .foregroundStyle(.primary.opacity(0.25))
+                } else {
+                    let g = visibleGoals[min(activeIndex, visibleGoals.count - 1)]
+                    if isToday, g.isHealthBacked, let p = health.progressById[g.id] {
+                        Text("\(Int(p * 100))%")
+                            .font(.system(size: 14, design: .monospaced))
+                            .foregroundStyle(.primary.opacity(0.45))
+                    } else if let p = g.progress(on: selectedDate) {
+                        let dayLabel = isToday ? "today" : dayStrip_label(selectedDate)
+                        Text("\(Int(p * 100))% · \(dayLabel)")
+                            .font(.system(size: 14, design: .monospaced))
+                            .foregroundStyle(.primary.opacity(0.45))
+                    } else {
+                        Text("nothing scheduled")
+                            .font(.system(size: 14, design: .monospaced))
+                            .foregroundStyle(.primary.opacity(0.25))
+                    }
                 }
             }
         case .life:
