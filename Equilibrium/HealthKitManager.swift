@@ -263,11 +263,36 @@ final class HealthKitManager: ObservableObject {
             }
         }
 
+        var shareTypes = Set<HKSampleType>()
+        if let mindfulType = HKObjectType.categoryType(forIdentifier: .mindfulSession) {
+            shareTypes.insert(mindfulType)
+        }
+
         do {
-            try await store.requestAuthorization(toShare: [], read: readTypes)
+            try await store.requestAuthorization(toShare: shareTypes, read: readTypes)
             isAuthorized = true
         } catch {
             isAuthorized = false
+        }
+    }
+
+    // MARK: - Write mindful session
+
+    /// Saves a completed in-app meditation session to HealthKit as a mindful session sample.
+    func saveMindfulSession(durationSeconds: Int) async {
+        guard isAvailable,
+              let mindfulType = HKObjectType.categoryType(forIdentifier: .mindfulSession)
+        else { return }
+        let end   = Date()
+        let start = end.addingTimeInterval(-Double(durationSeconds))
+        let sample = HKCategorySample(type: mindfulType,
+                                      value: HKCategoryValue.notApplicable.rawValue,
+                                      start: start,
+                                      end: end)
+        do {
+            try await store.save(sample)
+        } catch {
+            print("[HealthKit] saveMindfulSession error: \(error)")
         }
     }
 

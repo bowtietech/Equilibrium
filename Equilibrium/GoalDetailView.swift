@@ -60,6 +60,7 @@ struct GoalDetailView: View {
 
             List {
                 headerSection
+                meditationToggleRow
                 if goal.isMeditation {
                     meditationSection
                 }
@@ -94,6 +95,12 @@ struct GoalDetailView: View {
                 showMeditation = false
                 let entry = MeditationEntry(durationSecs: secs, malaCount: malas)
                 store.saveMeditationSession(entry, for: goal)
+                // For health-backed Mindfulness goals, write the session back to HealthKit
+                // so the progress ring updates automatically.
+                if goal.isHealthBacked,
+                   goal.healthKitIdentifier == HKCategoryTypeIdentifier.mindfulSession.rawValue {
+                    Task { await health.saveMindfulSession(durationSeconds: secs) }
+                }
                 // Mark today's meditation item complete if present
                 if let i = goal.items.firstIndex(where: { $0.isActiveToday && !$0.isComplete }) {
                     goal.items[i].isComplete = true
@@ -175,22 +182,23 @@ struct GoalDetailView: View {
                         .font(.system(size: 10, design: .monospaced))
                         .foregroundStyle(.primary.opacity(0.15))
                 }
-
-                if !goal.isHealthBacked {
-                    Toggle(isOn: $goal.isMeditation) {
-                        Label("Meditation Mode", systemImage: "figure.mind.and.body")
-                            .font(.system(size: 13))
-                            .foregroundStyle(.primary.opacity(0.55))
-                    }
-                    .tint(goal.color)
-                    .padding(.horizontal, 32)
-                    .padding(.top, 4)
-                }
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 28)
             .listRowBackground(Color.clear)
             .listRowSeparator(.hidden)
+        }
+    }
+
+    // Standalone toggle row — always visible regardless of health-backed status
+    private var meditationToggleRow: some View {
+        Section {
+            Toggle(isOn: $goal.isMeditation) {
+                Label("Meditation Mode", systemImage: "figure.mind.and.body")
+                    .font(.system(size: 15))
+            }
+            .tint(goal.color)
+            .listRowBackground(Color.appRowFill)
         }
     }
 
