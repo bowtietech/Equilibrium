@@ -428,6 +428,8 @@ struct GoalItemRow: View {
     @Binding var editingID: UUID?
     @Binding var editBuffer: String
 
+    @FocusState private var isFocused: Bool
+
     private var isEditing: Bool { editingID == item.id }
 
     var body: some View {
@@ -453,6 +455,7 @@ struct GoalItemRow: View {
                         .font(.system(size: 15))
                         .foregroundStyle(.primary)
                         .tint(goalColor)
+                        .focused($isFocused)
                         .onSubmit { commitEdit() }
                 } else {
                     Text(item.name)
@@ -487,13 +490,18 @@ struct GoalItemRow: View {
                 Button("Done") { commitEdit() }
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(goalColor)
+                    .buttonStyle(.plain)
             }
         }
         .padding(.vertical, 12)
         .contentShape(Rectangle())
+        .onChange(of: isEditing) { _, editing in
+            if editing { isFocused = true }
+        }
     }
 
     private func commitEdit() {
+        isFocused = false
         let trimmed = editBuffer.trimmingCharacters(in: .whitespaces)
         if !trimmed.isEmpty { item.name = trimmed }
         editingID = nil

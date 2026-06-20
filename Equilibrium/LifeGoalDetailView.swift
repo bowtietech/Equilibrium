@@ -431,6 +431,7 @@ private struct ProjectGoalDetail: View {
                         Button("Done") { commitNode(parent) }
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundStyle(goal.color)
+                            .buttonStyle(.plain)
                     }
                 } else {
                     Text(sub.name)
@@ -490,9 +491,9 @@ private struct ProjectGoalDetail: View {
     }
 
     private func commitNode(_ parent: Binding<SubGoal>) {
+        nodeFocused = false
         let t = nodeBuffer.trimmingCharacters(in: .whitespaces)
         if !t.isEmpty { parent.wrappedValue.name = t }
-        nodeFocused = false
         withAnimation { editingNodeID = nil }
     }
 
@@ -530,6 +531,7 @@ private struct ProjectGoalDetail: View {
                     Button("Done") { commitChildNode(child) }
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(color)
+                        .buttonStyle(.plain)
                 }
             } else {
                 Text(c.name)
@@ -551,9 +553,9 @@ private struct ProjectGoalDetail: View {
     }
 
     private func commitChildNode(_ child: Binding<SubGoal>) {
+        nodeFocused = false
         let t = nodeBuffer.trimmingCharacters(in: .whitespaces)
         if !t.isEmpty { child.wrappedValue.name = t }
-        nodeFocused = false
         withAnimation { editingNodeID = nil }
     }
 
