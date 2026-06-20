@@ -49,8 +49,6 @@ struct AIAssistantOverlay: View {
                             .fill(buttonColor)
                             .frame(width: 52, height: 52)
                             .shadow(color: buttonColor.opacity(0.45), radius: 12, x: 0, y: 4)
-                            .scaleEffect(isHoldMode ? 1.12 : 1.0)
-                            .animation(.spring(response: 0.2, dampingFraction: 0.6), value: isHoldMode)
 
                         if phase == .thinking {
                             ProgressView()
