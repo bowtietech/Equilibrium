@@ -15,6 +15,7 @@
 		AA40003200000001 /* AIAssistantOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA40003100000001 /* AIAssistantOverlay.swift */; };
 		AA50002200000001 /* MeditationAudioEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA50002100000001 /* MeditationAudioEngine.swift */; };
 		AA50003200000001 /* MeditationSessionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA50003100000001 /* MeditationSessionView.swift */; };
+		AA50004200000001 /* BalanceAnalyticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA50004100000001 /* BalanceAnalyticsView.swift */; };
 		AA40004200000001 /* WatchAIButton.swift in Sources (Watch) */ = {isa = PBXBuildFile; fileRef = AA40004100000001 /* WatchAIButton.swift */; };
 		AA30001200000001 /* WatchConnector.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA30001100000001 /* WatchConnector.swift */; };
 		AA30002200000001 /* WatchDataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA30002100000001 /* WatchDataStore.swift */; };
@@ -81,6 +82,7 @@
 		AA40003100000001 /* AIAssistantOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIAssistantOverlay.swift; sourceTree = "<group>"; };
 		AA50002100000001 /* MeditationAudioEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeditationAudioEngine.swift; sourceTree = "<group>"; };
 		AA50003100000001 /* MeditationSessionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeditationSessionView.swift; sourceTree = "<group>"; };
+		AA50004100000001 /* BalanceAnalyticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BalanceAnalyticsView.swift; sourceTree = "<group>"; };
 		AA40004100000001 /* WatchAIButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchAIButton.swift; sourceTree = "<group>"; };
 		AA30001100000001 /* WatchConnector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchConnector.swift; sourceTree = "<group>"; };
 		AA30002100000001 /* WatchDataStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchDataStore.swift; sourceTree = "<group>"; };
@@ -184,6 +186,7 @@
 				AA40003100000001 /* AIAssistantOverlay.swift */,
 				AA50002100000001 /* MeditationAudioEngine.swift */,
 				AA50003100000001 /* MeditationSessionView.swift */,
+				AA50004100000001 /* BalanceAnalyticsView.swift */,
 				AA30001100000001 /* WatchConnector.swift */,
 			AA0000000000000000000005 /* Assets.xcassets */,
 			);
@@ -340,6 +343,7 @@
 				AA40003200000001 /* AIAssistantOverlay.swift in Sources */,
 				AA50002200000001 /* MeditationAudioEngine.swift in Sources */,
 				AA50003200000001 /* MeditationSessionView.swift in Sources */,
+				AA50004200000001 /* BalanceAnalyticsView.swift in Sources */,
 				AA30001200000001 /* WatchConnector.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

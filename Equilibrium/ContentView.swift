@@ -24,6 +24,7 @@ struct ContentView: View {
     @State private var showProfile      = false
     @State private var showHealthImport = false
     @State private var showAddGoal      = false
+    @State private var showAnalytics    = false
     @State private var selectedDate     = Calendar.current.startOfDay(for: Date())
     @State private var weekOffset       = 0   // weeks relative to current week
 
@@ -80,7 +81,7 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showProfile) {
             ProfileView(
-                balanceScore: store.goals.filter(\.isActive).balanceScore,
+                balanceScore: computedDailyBalance,
                 dailyGoalCount: store.goals.count,
                 lifeGoalCount: store.lifeGoals.count,
                 showHealthImport: $showHealthImport
@@ -92,6 +93,11 @@ struct ContentView: View {
         .sheet(isPresented: $showAddGoal) {
             AddGoalSheet(mode: mode)
         }
+        .sheet(isPresented: $showAnalytics) {
+            BalanceAnalyticsView(initialMode: mode)
+                .environmentObject(store)
+                .environmentObject(health)
+        }
         .onChange(of: mode) { _, newMode in
             let count = newMode == .daily ? store.goals.count : store.lifeGoals.count
             withAnimation(.spring(response: 0.4)) {
@@ -102,12 +108,14 @@ struct ContentView: View {
         .task {
             await health.refresh(goals: store.goals)
             await applyLifeGoalHealthUpdates()
+            store.recordBalance(daily: computedDailyBalance, life: computedLifeBalance)
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
                 Task {
                     await health.refresh(goals: store.goals)
                     await applyLifeGoalHealthUpdates()
+                    store.recordBalance(daily: computedDailyBalance, life: computedLifeBalance)
                 }
             }
         }
@@ -124,7 +132,10 @@ struct ContentView: View {
                     }
                 }
             }
-            Task { await health.refresh(goals: new) }
+            Task {
+                await health.refresh(goals: new)
+                store.recordBalance(daily: computedDailyBalance, life: computedLifeBalance)
+            }
         }
         .onChange(of: store.lifeGoals) { old, new in
             let prevActive = old.filter(\.isActive).count
@@ -361,8 +372,21 @@ struct ContentView: View {
         }
     }
 
+    /// Balance across all active daily goals for the selected date,
+    /// incorporating live HealthKit values for health-backed goals.
+    private var computedDailyBalance: Double {
+        guard !entries.isEmpty else { return 0 }
+        return entries.map(\.progress).reduce(0, +) / Double(entries.count)
+    }
+
+    private var computedLifeBalance: Double {
+        let active = store.lifeGoals.filter(\.isActive)
+        guard !active.isEmpty else { return 0 }
+        return active.map(\.progress).reduce(0, +) / Double(active.count)
+    }
+
     private var dailyScoreCard: some View {
-        let score = store.goals.filter(\.isActive).balanceScore
+        let score = computedDailyBalance
         return HStack(spacing: 14) {
             ringView(progress: score, color: scoreColor(score))
                 .frame(width: 44, height: 44)
@@ -385,15 +409,22 @@ struct ContentView: View {
 
             Spacer()
 
-            Text(todayLabel)
-                .font(.system(size: 11, design: .monospaced))
-                .foregroundStyle(.primary.opacity(0.2))
+            VStack(alignment: .trailing, spacing: 4) {
+                Image(systemName: "chart.line.uptrend.xyaxis")
+                    .font(.system(size: 14))
+                    .foregroundStyle(.primary.opacity(0.18))
+                Text(todayLabel)
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundStyle(.primary.opacity(0.2))
+            }
         }
         .cardStyle()
+        .contentShape(Rectangle())
+        .onTapGesture { showAnalytics = true }
     }
 
     private var lifeProgressCard: some View {
-        let score = store.lifeGoals.map(\.progress).reduce(0, +) / max(1, Double(store.lifeGoals.count))
+        let score = computedLifeBalance
         return HStack(spacing: 14) {
             ringView(progress: score, color: scoreColor(score))
                 .frame(width: 44, height: 44)
@@ -427,6 +458,8 @@ struct ContentView: View {
             .foregroundStyle(.primary.opacity(0.2))
         }
         .cardStyle()
+        .contentShape(Rectangle())
+        .onTapGesture { showAnalytics = true }
     }
 
     // MARK: - Goal Info

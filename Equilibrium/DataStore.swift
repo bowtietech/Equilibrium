@@ -16,6 +16,14 @@ private struct UserDataRow: Codable {
     }
 }
 
+// MARK: - Balance history entry
+
+struct BalanceEntry: Identifiable, Codable {
+    var id    = UUID()
+    var date: Date
+    var score: Double   // 0–1
+}
+
 // MARK: - Meditation history entry
 
 struct MeditationEntry: Identifiable, Codable {
@@ -31,7 +39,9 @@ final class DataStore: ObservableObject {
 
     @Published var goals: [Goal]
     @Published var lifeGoals: [LifeGoal]
-    @Published var meditationHistory: [MeditationEntry]
+    @Published var meditationHistory:     [MeditationEntry]
+    @Published var dailyBalanceHistory:   [BalanceEntry]
+    @Published var lifeBalanceHistory:    [BalanceEntry]
     @Published var needsOnboarding: Bool
 
     private var userId: UUID?
@@ -41,12 +51,18 @@ final class DataStore: ObservableObject {
     private static let lifeGoalsKey        = "eq_life_goals_v1"
     private static let onboardedKey        = "eq_onboarded_v1"
     private static let meditationKey       = "eq_meditation_v1"
+    private static let dailyBalanceKey     = "eq_balance_daily_v1"
+    private static let lifeBalanceKey      = "eq_balance_life_v1"
 
     init() {
-        let stored  = Self.loadLocal(key: Self.goalsKey,       fallback: [Goal]())
-        let storedL = Self.loadLocal(key: Self.lifeGoalsKey,   fallback: [LifeGoal]())
-        let storedM = Self.loadLocal(key: Self.meditationKey,  fallback: [MeditationEntry]())
-        meditationHistory = storedM
+        let stored  = Self.loadLocal(key: Self.goalsKey,          fallback: [Goal]())
+        let storedL = Self.loadLocal(key: Self.lifeGoalsKey,      fallback: [LifeGoal]())
+        let storedM = Self.loadLocal(key: Self.meditationKey,     fallback: [MeditationEntry]())
+        let storedDB = Self.loadLocal(key: Self.dailyBalanceKey,  fallback: [BalanceEntry]())
+        let storedLB = Self.loadLocal(key: Self.lifeBalanceKey,   fallback: [BalanceEntry]())
+        meditationHistory   = storedM
+        dailyBalanceHistory = storedDB
+        lifeBalanceHistory  = storedLB
         goals     = stored
         lifeGoals = storedL
 
@@ -212,10 +228,31 @@ final class DataStore: ObservableObject {
     // MARK: - Utilities
 
     func saveNow() {
-        Self.saveLocal(goals,            key: Self.goalsKey)
-        Self.saveLocal(lifeGoals,        key: Self.lifeGoalsKey)
+        Self.saveLocal(goals,             key: Self.goalsKey)
+        Self.saveLocal(lifeGoals,         key: Self.lifeGoalsKey)
         Self.saveLocal(meditationHistory, key: Self.meditationKey)
+        Self.saveLocal(dailyBalanceHistory, key: Self.dailyBalanceKey)
+        Self.saveLocal(lifeBalanceHistory,  key: Self.lifeBalanceKey)
         pushToCloud()
+    }
+
+    /// Records today's balance scores (upserts one entry per day per mode).
+    func recordBalance(daily: Double, life: Double) {
+        let cal   = Calendar.current
+        let today = cal.startOfDay(for: Date())
+
+        func upsert(_ list: inout [BalanceEntry], score: Double) {
+            if let i = list.lastIndex(where: { cal.isDate($0.date, inSameDayAs: today) }) {
+                list[i].score = score
+            } else {
+                list.append(BalanceEntry(date: Date(), score: score))
+            }
+        }
+
+        upsert(&dailyBalanceHistory, score: daily)
+        upsert(&lifeBalanceHistory,  score: life)
+        Self.saveLocal(dailyBalanceHistory, key: Self.dailyBalanceKey)
+        Self.saveLocal(lifeBalanceHistory,  key: Self.lifeBalanceKey)
     }
 
     /// Saves a completed meditation session and updates linked life goals.
