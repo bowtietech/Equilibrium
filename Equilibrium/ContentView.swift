@@ -38,11 +38,22 @@ struct ContentView: View {
     private var entries: [WheelEntry] {
         switch mode {
         case .daily:
+            let cal = Calendar.current
             return store.goals
                 .filter { $0.isActive && ($0.items.isEmpty || $0.items.contains { $0.isActive(on: selectedDate) }) }
                 .map { goal in
-                    goal.wheelEntry(on: selectedDate,
-                                    healthProgress: isToday ? health.progressById[goal.id] : nil)
+                    var progressOverride: Double? = nil
+                    if goal.isHealthBacked && isToday {
+                        // Live HealthKit value
+                        progressOverride = health.progressById[goal.id]
+                    } else if goal.isMeditation {
+                        // Time-based progress: sum all sessions for the selected date
+                        let secsToday = store.meditationHistory
+                            .filter { cal.isDate($0.date, inSameDayAs: selectedDate) }
+                            .reduce(0) { $0 + $1.durationSecs }
+                        progressOverride = min(1.0, Double(secsToday) / Double(max(1, goal.meditationMinutes) * 60))
+                    }
+                    return goal.wheelEntry(on: selectedDate, healthProgress: progressOverride)
                 }
         case .life:
             return store.lifeGoals.filter(\.isActive).map(\.wheelEntry)

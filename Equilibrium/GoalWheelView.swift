@@ -7,10 +7,16 @@ struct GoalWheelView: View {
 
     @Environment(\.colorScheme) private var colorScheme
 
-    @State private var rotation: Double = 0
-    @State private var dragDelta: Double = 0
+    @State private var rotation:   Double = 0
+    @State private var dragDelta:  Double = 0
+    @State private var isDragging: Bool   = false
 
     private var currentRotation: Double { rotation + dragDelta }
+
+    // A stable key derived from goals identity — used to detect when goals
+    // are replaced (mode switch, date change, add/remove goal) so we can
+    // re-snap the active goal to the top indicator.
+    private var goalsKey: [UUID] { goals.map(\.id) }
 
     var body: some View {
         GeometryReader { geo in
@@ -29,6 +35,7 @@ struct GoalWheelView: View {
                     .onChanged { val in
                         let moved = hypot(Double(val.translation.width), Double(val.translation.height))
                         guard moved > 6 else { return }
+                        isDragging = true
                         dragDelta = angularDelta(start: val.startLocation,
                                                  current: val.location,
                                                  center: center)
@@ -40,6 +47,7 @@ struct GoalWheelView: View {
                         }
                     }
                     .onEnded { val in
+                        isDragging = false
                         let moved = hypot(Double(val.translation.width), Double(val.translation.height))
                         if moved < 6 {
                             dragDelta = 0
@@ -51,6 +59,17 @@ struct GoalWheelView: View {
                         }
                     }
             )
+            // Re-snap whenever goals are replaced (mode switch, date change, etc.)
+            .onChange(of: goalsKey) { _, _ in
+                guard !isDragging else { return }
+                snap()
+            }
+            // Re-snap when activeIndex is changed externally (e.g. auto-focus new goal)
+            .onChange(of: activeIndex) { _, _ in
+                guard !isDragging else { return }
+                snap()
+            }
+            .onAppear { snap() }
         }
     }
 
@@ -225,23 +244,21 @@ struct GoalWheelView: View {
         let coreDot: Color = colorScheme == .dark ? .white.opacity(0.9) : Color.primary.opacity(0.9)
         ctx.fill(Path(ellipseIn: coreRect), with: .color(coreDot))
 
-        // Top indicator — downward-pointing triangle in the active goal's color.
-        // Positioned fully outside the wheel radius so it never overlaps a 0%-progress dot.
-        let triHW: CGFloat = max(5.5, radius * 0.048)   // half-width of base
-        let triH:  CGFloat = max(6.5, radius * 0.056)   // height (tip to base)
-        let triTipY = center.y - radius - 5              // tip clears the outermost dot with a small gap
-        let triTopY = triTipY - triH
-
-        var tri = Path()
-        tri.move(to: CGPoint(x: center.x,            y: triTipY))   // bottom apex (points down)
-        tri.addLine(to: CGPoint(x: center.x - triHW, y: triTopY))   // top-left
-        tri.addLine(to: CGPoint(x: center.x + triHW, y: triTopY))   // top-right
-        tri.closeSubpath()
+        // Top indicator — filled circle pip above the wheel, pointing to the active spoke.
+        let pipR:   CGFloat = max(5.0, radius * 0.042)
+        let pipCY = center.y - radius - pipR - 3   // sits just above the outermost dot
+        let pipRect = CGRect(x: center.x - pipR, y: pipCY - pipR, width: pipR * 2, height: pipR * 2)
 
         ctx.drawLayer { layer in
-            layer.addFilter(.shadow(color: activeColor, radius: 6, x: 0, y: 0))
-            layer.fill(tri, with: .color(activeColor))
+            layer.addFilter(.shadow(color: activeColor, radius: 8, x: 0, y: 0))
+            layer.fill(Path(ellipseIn: pipRect), with: .color(activeColor))
         }
+        // Inner bright core so it reads clearly on both themes
+        let coreR2: CGFloat = pipR * 0.45
+        let core2Rect = CGRect(x: center.x - coreR2, y: pipCY - coreR2,
+                               width: coreR2 * 2, height: coreR2 * 2)
+        ctx.fill(Path(ellipseIn: core2Rect),
+                 with: .color(colorScheme == .dark ? .white.opacity(0.85) : Color.primary.opacity(0.85)))
     }
 
     private func drawRing(ctx: GraphicsContext, center: CGPoint, radius: CGFloat, opacity: Double) {

@@ -115,7 +115,21 @@ struct GoalDetailView: View {
 
     private var effectiveProgress: Double {
         if let hkP = health.progressById[goal.id] { return hkP }
+        if goal.isMeditation {
+            let secs = store.meditationHistory
+                .filter { Calendar.current.isDateInToday($0.date) }
+                .reduce(0) { $0 + $1.durationSecs }
+            return min(1.0, Double(secs) / Double(max(1, goal.meditationMinutes) * 60))
+        }
         return goal.todayProgress ?? goal.progress
+    }
+
+    /// Today's total meditation time in minutes (for subtitle display).
+    private var meditationMinsToday: Int {
+        let secs = store.meditationHistory
+            .filter { Calendar.current.isDateInToday($0.date) }
+            .reduce(0) { $0 + $1.durationSecs }
+        return secs / 60
     }
 
     private var headerSection: some View {
@@ -165,6 +179,11 @@ struct GoalDetailView: View {
                        let unit = goal.healthKitUnit {
                         let current = effectiveProgress * target
                         Text("\(formattedValue(current, unit: unit)) / \(formattedValue(target, unit: unit))")
+                            .font(.system(size: 13, weight: .regular, design: .monospaced))
+                            .foregroundStyle(.primary.opacity(0.38))
+                    } else if goal.isMeditation {
+                        let mins = meditationMinsToday
+                        Text("\(mins) / \(goal.meditationMinutes) min today  ·  \(Int(effectiveProgress * 100))%")
                             .font(.system(size: 13, weight: .regular, design: .monospaced))
                             .foregroundStyle(.primary.opacity(0.38))
                     } else if let tp = goal.todayProgress {
